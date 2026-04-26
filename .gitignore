@@ -16,3 +16,17 @@ coverage/
 .cache/
 tmp/
 temp/
+
+# .NET / MAUI / Visual Studio
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.csproj.user
+*.pidb
+*.svclog
+*.VC.db
+*.VC.VC.opendb
