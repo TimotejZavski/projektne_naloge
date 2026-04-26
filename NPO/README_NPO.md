@@ -81,3 +81,7 @@ Oddajte kratek pregled projekta, ki vključuje:
 - opis prispevkov posameznih članov.
 
 Dokument naj bo v PDF formatu.
+
+
+opomba:
+maui->android/ios (blazor one..)
