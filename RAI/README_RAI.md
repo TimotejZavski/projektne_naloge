@@ -61,3 +61,16 @@ Paket s predstavitvijo, programsko kodo, izvozom podatkovne baze in povezavo do 
 - Vizualizacija ostalih podatkov (4 točke)
 - Sprotno delo (6 točk)
 - Skupaj: 34 točk
+
+
+opomba:
+(zagon)
+# terminal1
+cd RAI/server
+npm install
+npm run dev
+
+# terminal2
+cd RAI/client
+npm install
+npm start
