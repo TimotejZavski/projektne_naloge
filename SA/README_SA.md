@@ -41,3 +41,8 @@ Oddajte terminski plan vašega projekta, z vsemi aktivnostmi pri posmaeznih proj
 Rok oddaje do	26. 4. 2026 ob 23:55:00
 
 Naloga je obvezna	Število oddaj: 0/3
+
+
+
+opomba:
+tu pride Dockerfile, docker-compose.yml, GitHub Actions skripte (.github/workflows), nastavitve požarnega zidu (npr. iptables rules), skripte za namestitev (setup.sh), Jira exporte ipd.
