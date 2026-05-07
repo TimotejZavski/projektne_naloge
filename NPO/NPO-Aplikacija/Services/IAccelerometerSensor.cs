@@ -9,7 +9,7 @@ public interface IAccelerometerSensor
     /// Pridobi trenutne accelerometer podatke
     /// </summary>
     /// <returns>Pospeški v X, Y, Z oseh in timestamp</returns>
-    Task<(double X, double Y, double Z, DateTime Timestamp)> GetAccelerationAsync();
+    Task<global::NPO_Aplikacija.Models.AccelerometerData> GetAccelerationAsync();
 
     /// <summary>
     /// Event ki se sproži ko so novi accelerometer podatki dostopni
@@ -37,8 +37,5 @@ public interface IAccelerometerSensor
 /// </summary>
 public class AccelerometerDataEventArgs : EventArgs
 {
-    public double X { get; init; }
-    public double Y { get; init; }
-    public double Z { get; init; }
-    public DateTime Timestamp { get; init; }
+    public required global::NPO_Aplikacija.Models.AccelerometerData Data { get; init; }
 }

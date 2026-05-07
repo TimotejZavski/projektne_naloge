@@ -10,15 +10,12 @@ public class AccelerometerSensor : IAccelerometerSensor
 
     public bool IsActive => _isActive;
 
-    public async Task<(double X, double Y, double Z, DateTime Timestamp)> GetAccelerationAsync()
+    public async Task<global::NPO_Aplikacija.Models.AccelerometerData> GetAccelerationAsync()
     {
         // Stub podatki
-        var x = 0.5;
-        var y = 0.3;
-        var z = 9.81;
-        var timestamp = DateTime.UtcNow;
+        var data = new global::NPO_Aplikacija.Models.AccelerometerData(0.5, 0.3, 9.81, DateTime.UtcNow);
 
-        return await Task.FromResult((x, y, z, timestamp));
+        return await Task.FromResult(data);
     }
 
     public async Task StartAsync()
