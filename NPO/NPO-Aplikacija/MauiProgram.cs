@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using NPO_Aplikacija.Services;
 
 namespace NPO_Aplikacija
 {
@@ -15,6 +16,11 @@ namespace NPO_Aplikacija
                 });
 
             builder.Services.AddMauiBlazorWebView();
+
+            // Registracija senzorskih storitev
+            builder.Services.AddSingleton<IGPSSensor, GPSSensor>();
+            builder.Services.AddSingleton<IAccelerometerSensor, AccelerometerSensor>();
+            builder.Services.AddSingleton<ISensorService, SensorService>();
 
 #if DEBUG
     		builder.Services.AddBlazorWebViewDeveloperTools();
