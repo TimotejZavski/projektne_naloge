@@ -1,6 +1,7 @@
 @page "/sensors"
 @inject ISensorService SensorService
 @inject ISensorDataRepository SensorDataRepository
+@implements IAsyncDisposable
 
 <PageTitle>Sensors</PageTitle>
 
@@ -170,8 +171,14 @@
 
     protected override async Task OnInitializedAsync()
     {
+        SensorService.SensorDataUpdated += HandleSensorDataUpdated;
         await SensorService.InitializeAsync();
-        await RefreshAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        SensorService.SensorDataUpdated -= HandleSensorDataUpdated;
+        await SensorService.StopAsync();
     }
 
     private async Task RefreshAsync()
@@ -179,14 +186,7 @@
         isLoading = true;
         StateHasChanged();
 
-        latestGpsData = await SensorService.GPSSensor.GetLocationAsync();
-        latestAccelerometerData = await SensorService.AccelerometerSensor.GetAccelerationAsync();
-
-        await SensorDataRepository.AddAsync(latestGpsData);
-        await SensorDataRepository.AddAsync(latestAccelerometerData);
-        sensorHistory = (await SensorDataRepository.GetAllAsync())
-            .OrderByDescending(item => item.Timestamp)
-            .ToArray();
+        await SensorService.InitializeAsync();
 
         isLoading = false;
     }
@@ -197,6 +197,15 @@
         sensorHistory = Array.Empty<SensorData>();
         latestGpsData = null;
         latestAccelerometerData = null;
+    }
+
+    private void HandleSensorDataUpdated(object? sender, SensorDataUpdatedEventArgs eventArgs)
+    {
+        latestGpsData = eventArgs.GpsData;
+        latestAccelerometerData = eventArgs.AccelerometerData;
+        sensorHistory = eventArgs.Snapshot;
+
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private static string GetSensorBadgeClass(SensorData sensorData) => sensorData switch
