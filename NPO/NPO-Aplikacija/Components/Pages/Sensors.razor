@@ -1,0 +1,165 @@
+@page "/sensors"
+@inject ISensorService SensorService
+@inject ISensorDataRepository SensorDataRepository
+
+<PageTitle>Sensors</PageTitle>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="mb-1">Sensors</h1>
+        <p class="text-muted mb-0">Mock GPS and accelerometer data are captured and shown in-app.</p>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" @onclick="RefreshAsync" disabled="@isLoading">
+            @(isLoading ? "Refreshing..." : "Refresh data")
+        </button>
+        <button class="btn btn-outline-secondary" @onclick="ClearHistoryAsync" disabled="@isLoading || !sensorHistory.Any()">
+            Clear history
+        </button>
+    </div>
+</div>
+
+@if (isLoading && !sensorHistory.Any())
+{
+    <p><em>Loading sensor data...</em></p>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 card-title">GPS</h2>
+                    @if (latestGpsData is null)
+                    {
+                        <p class="text-muted mb-0">No GPS data available yet.</p>
+                    }
+                    else
+                    {
+                        <dl class="row mb-0">
+                            <dt class="col-4">Latitude</dt>
+                            <dd class="col-8">@latestGpsData.Latitude</dd>
+                            <dt class="col-4">Longitude</dt>
+                            <dd class="col-8">@latestGpsData.Longitude</dd>
+                            <dt class="col-4">Timestamp</dt>
+                            <dd class="col-8">@latestGpsData.Timestamp.ToLocalTime()</dd>
+                        </dl>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Accelerometer</h2>
+                    @if (latestAccelerometerData is null)
+                    {
+                        <p class="text-muted mb-0">No accelerometer data available yet.</p>
+                    }
+                    else
+                    {
+                        <dl class="row mb-0">
+                            <dt class="col-4">X</dt>
+                            <dd class="col-8">@latestAccelerometerData.X</dd>
+                            <dt class="col-4">Y</dt>
+                            <dd class="col-8">@latestAccelerometerData.Y</dd>
+                            <dt class="col-4">Z</dt>
+                            <dd class="col-8">@latestAccelerometerData.Z</dd>
+                            <dt class="col-4">Timestamp</dt>
+                            <dd class="col-8">@latestAccelerometerData.Timestamp.ToLocalTime()</dd>
+                        </dl>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="h5 card-title mb-3">Captured data</h2>
+
+            @if (!sensorHistory.Any())
+            {
+                <p class="text-muted mb-0">No captured data yet.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Timestamp</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in sensorHistory)
+                            {
+                                <tr>
+                                    <td>@GetSensorLabel(item)</td>
+                                    <td>@item.Timestamp.ToLocalTime()</td>
+                                    <td>@GetSensorDetails(item)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading;
+    private GPSData? latestGpsData;
+    private AccelerometerData? latestAccelerometerData;
+    private IReadOnlyList<SensorData> sensorHistory = Array.Empty<SensorData>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SensorService.InitializeAsync();
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        latestGpsData = await SensorService.GPSSensor.GetLocationAsync();
+        latestAccelerometerData = await SensorService.AccelerometerSensor.GetAccelerationAsync();
+
+        await SensorDataRepository.AddAsync(latestGpsData);
+        await SensorDataRepository.AddAsync(latestAccelerometerData);
+        sensorHistory = (await SensorDataRepository.GetAllAsync())
+            .OrderByDescending(item => item.Timestamp)
+            .ToArray();
+
+        isLoading = false;
+    }
+
+    private async Task ClearHistoryAsync()
+    {
+        await SensorDataRepository.ClearAsync();
+        sensorHistory = Array.Empty<SensorData>();
+        latestGpsData = null;
+        latestAccelerometerData = null;
+    }
+
+    private static string GetSensorLabel(SensorData sensorData) => sensorData switch
+    {
+        GPSData => "GPS",
+        AccelerometerData => "Accelerometer",
+        _ => sensorData.Kind.ToString()
+    };
+
+    private static string GetSensorDetails(SensorData sensorData) => sensorData switch
+    {
+        GPSData gpsData => $"Lat: {gpsData.Latitude}, Lon: {gpsData.Longitude}",
+        AccelerometerData accelerometerData => $"X: {accelerometerData.X}, Y: {accelerometerData.Y}, Z: {accelerometerData.Z}",
+        _ => "Unknown sensor data"
+    };
+}
