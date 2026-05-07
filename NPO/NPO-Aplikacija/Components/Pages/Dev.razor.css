@@ -1,0 +1,15 @@
+:root {
+    --dev-accent: #db2777;
+}
+
+.dev-page h1 {
+    margin-bottom: 0.5rem;
+}
+
+.dev-actions {
+    margin-top: 1rem;
+}
+
+.dev-message {
+    color: var(--dev-accent);
+}

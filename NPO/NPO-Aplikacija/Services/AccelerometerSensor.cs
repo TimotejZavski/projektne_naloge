@@ -1,32 +1,81 @@
+using Microsoft.Maui.Devices.Sensors;
+
 namespace NPO_Aplikacija.Services;
 
 /// <summary>
-/// Stub implementacija Accelerometer senzorja
+/// Accelerometer sensor implementation using MAUI device sensors
 /// </summary>
 public class AccelerometerSensor : IAccelerometerSensor
 {
     private bool _isActive = false;
+    private global::NPO_Aplikacija.Models.AccelerometerData? _latest;
+
     public event EventHandler<AccelerometerDataEventArgs>? AccelerationUpdated;
 
     public bool IsActive => _isActive;
 
-    public async Task<global::NPO_Aplikacija.Models.AccelerometerData> GetAccelerationAsync()
+    public Task<global::NPO_Aplikacija.Models.AccelerometerData> GetAccelerationAsync()
     {
-        // Stub podatki
-        var data = new global::NPO_Aplikacija.Models.AccelerometerData(0.5, 0.3, 9.81, DateTime.UtcNow);
+        if (_latest is not null)
+            return Task.FromResult(_latest);
 
-        return await Task.FromResult(data);
+        // If no live data yet, return a sensible zeroed value (gravity on Z if device stationary)
+        var fallback = new global::NPO_Aplikacija.Models.AccelerometerData(0.0, 0.0, 9.81, DateTime.UtcNow);
+        return Task.FromResult(fallback);
     }
 
-    public async Task StartAsync()
+    public Task StartAsync()
     {
-        _isActive = true;
-        await Task.CompletedTask;
+        if (!Accelerometer.IsSupported)
+        {
+            _isActive = false;
+            return Task.CompletedTask;
+        }
+
+        if (_isActive)
+            return Task.CompletedTask;
+
+        Accelerometer.ReadingChanged += OnReadingChanged;
+        try
+        {
+            Accelerometer.Start(SensorSpeed.UI);
+            _isActive = true;
+        }
+        catch
+        {
+            // If start fails, ensure state is consistent
+            Accelerometer.ReadingChanged -= OnReadingChanged;
+            _isActive = false;
+        }
+
+        return Task.CompletedTask;
     }
 
-    public async Task StopAsync()
+    public Task StopAsync()
     {
+        if (!Accelerometer.IsSupported || !_isActive)
+            return Task.CompletedTask;
+
+        try
+        {
+            Accelerometer.Stop();
+        }
+        catch
+        {
+            // ignore stop errors
+        }
+
+        Accelerometer.ReadingChanged -= OnReadingChanged;
         _isActive = false;
-        await Task.CompletedTask;
+        return Task.CompletedTask;
+    }
+
+    private void OnReadingChanged(object? sender, AccelerometerChangedEventArgs e)
+    {
+        var r = e.Reading;
+        var data = new global::NPO_Aplikacija.Models.AccelerometerData(r.Acceleration.X, r.Acceleration.Y, r.Acceleration.Z, DateTime.UtcNow);
+        _latest = data;
+
+        AccelerationUpdated?.Invoke(this, new AccelerometerDataEventArgs { Data = data });
     }
 }

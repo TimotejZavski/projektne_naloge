@@ -1,0 +1,64 @@
+@page "/dev"
+@inject NPO_Aplikacija.Services.ISensorDataRepository SensorDataRepository
+@inject NPO_Aplikacija.Services.ISensorService SensorService
+
+<PageTitle>Dev</PageTitle>
+
+<div class="dev-page">
+    <h1>Developer</h1>
+    <p>Tools for development and testing. Use with caution — this will delete persisted captured sensor data.</p>
+
+    <div class="dev-actions">
+        <button class="btn btn-danger" @onclick="HandleDeleteAsync" disabled="@isProcessing">@buttonText</button>
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="mt-2 dev-message">@message</div>
+        }
+    </div>
+</div>
+
+@code {
+    private bool isProcessing = false;
+    private bool confirm = false;
+    private string buttonText = "Delete all captured data";
+    private string? message;
+
+    private async Task HandleDeleteAsync()
+    {
+        if (!confirm)
+        {
+            confirm = true;
+            buttonText = "Click again to confirm";
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                confirm = false;
+                buttonText = "Delete all captured data";
+                await InvokeAsync(StateHasChanged);
+            });
+            return;
+        }
+
+        // proceed with delete
+        isProcessing = true;
+        message = null;
+        try
+        {
+            await SensorDataRepository.ClearAsync();
+            message = "All captured data cleared.";
+
+            // reinitialize sensors so UI gets fresh state
+            await SensorService.InitializeAsync();
+        }
+        catch (Exception ex)
+        {
+            message = $"Error clearing data: {ex.Message}";
+        }
+        finally
+        {
+            isProcessing = false;
+            confirm = false;
+            buttonText = "Delete all captured data";
+        }
+    }
+}

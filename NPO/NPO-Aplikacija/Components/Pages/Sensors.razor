@@ -10,7 +10,6 @@
         <div class="sensor-hero__copy">
             <p class="sensor-kicker">Live sensor dashboard</p>
             <h1>Sensors</h1>
-            <p class="sensor-lead">Mock GPS and accelerometer values are captured locally and presented in a cleaner dashboard view.</p>
             <div class="sensor-actions">
                 <button class="btn btn-light sensor-primary-action" @onclick="RefreshAsync" disabled="@isLoading">
                     @(isLoading ? "Refreshing..." : "Refresh data")

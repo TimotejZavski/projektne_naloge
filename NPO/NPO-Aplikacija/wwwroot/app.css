@@ -2,6 +2,14 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+:root {
+    --bs-secondary-color: #6c757d;
+}
+
+body {
+    color: #222222;
+}
+
 a, .btn-link {
     color: #006bb7;
 }
