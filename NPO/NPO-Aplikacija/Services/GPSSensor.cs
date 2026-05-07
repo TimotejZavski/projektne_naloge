@@ -1,3 +1,5 @@
+using NPO_Aplikacija.Models;
+
 namespace NPO_Aplikacija.Services;
 
 /// <summary>
@@ -10,14 +12,12 @@ public class GPSSensor : IGPSSensor
 
     public bool IsActive => _isActive;
 
-    public async Task<(double Latitude, double Longitude, DateTime Timestamp)> GetLocationAsync()
+    public async Task<GPSData> GetLocationAsync()
     {
         // Stub podatki
-        var latitude = 46.0569;
-        var longitude = 14.5058;
-        var timestamp = DateTime.UtcNow;
+        var gpsData = new GPSData(46.0569, 14.5058, DateTime.UtcNow);
 
-        return await Task.FromResult((latitude, longitude, timestamp));
+        return await Task.FromResult(gpsData);
     }
 
     public async Task StartAsync()

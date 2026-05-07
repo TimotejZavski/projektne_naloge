@@ -1,3 +1,5 @@
+using NPO_Aplikacija.Models;
+
 namespace NPO_Aplikacija.Services;
 
 /// <summary>
@@ -9,7 +11,7 @@ public interface IGPSSensor
     /// Pridobi trenutno GPS lokacijo
     /// </summary>
     /// <returns>GPS podatki (latitude, longitude, timestamp)</returns>
-    Task<(double Latitude, double Longitude, DateTime Timestamp)> GetLocationAsync();
+    Task<GPSData> GetLocationAsync();
 
     /// <summary>
     /// Event ki se sproži ko so novi GPS podatki dostopni
@@ -37,7 +39,5 @@ public interface IGPSSensor
 /// </summary>
 public class GPSDataEventArgs : EventArgs
 {
-    public double Latitude { get; init; }
-    public double Longitude { get; init; }
-    public DateTime Timestamp { get; init; }
+    public required GPSData Data { get; init; }
 }
