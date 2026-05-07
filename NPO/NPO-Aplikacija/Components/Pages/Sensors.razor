@@ -4,113 +4,163 @@
 
 <PageTitle>Sensors</PageTitle>
 
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-        <h1 class="mb-1">Sensors</h1>
-        <p class="text-muted mb-0">Mock GPS and accelerometer data are captured and shown in-app.</p>
-    </div>
+<div class="sensor-dashboard">
+    <section class="sensor-hero shadow-sm">
+        <div class="sensor-hero__copy">
+            <p class="sensor-kicker">Live sensor dashboard</p>
+            <h1>Sensors</h1>
+            <p class="sensor-lead">Mock GPS and accelerometer values are captured locally and presented in a cleaner dashboard view.</p>
+            <div class="sensor-actions">
+                <button class="btn btn-light sensor-primary-action" @onclick="RefreshAsync" disabled="@isLoading">
+                    @(isLoading ? "Refreshing..." : "Refresh data")
+                </button>
+                <button class="btn btn-outline-light sensor-secondary-action" @onclick="ClearHistoryAsync" disabled="@isLoading || !sensorHistory.Any()">
+                    Clear history
+                </button>
+            </div>
+        </div>
 
-    <div class="d-flex gap-2">
-        <button class="btn btn-primary" @onclick="RefreshAsync" disabled="@isLoading">
-            @(isLoading ? "Refreshing..." : "Refresh data")
-        </button>
-        <button class="btn btn-outline-secondary" @onclick="ClearHistoryAsync" disabled="@isLoading || !sensorHistory.Any()">
-            Clear history
-        </button>
-    </div>
-</div>
+        <div class="sensor-hero__status">
+            <div class="sensor-status-card">
+                <span class="sensor-status-dot"></span>
+                <div>
+                    <div class="sensor-status-label">Connection</div>
+                    <div class="sensor-status-value">Mock capture ready</div>
+                </div>
+            </div>
+            <div class="sensor-status-card sensor-status-card--accent">
+                <div>
+                    <div class="sensor-status-label">Stored samples</div>
+                    <div class="sensor-status-value">@sensorHistory.Count</div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-@if (isLoading && !sensorHistory.Any())
-{
-    <p><em>Loading sensor data...</em></p>
-}
-else
-{
-    <div class="row g-3 mb-4">
-        <div class="col-12 col-lg-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h2 class="h5 card-title">GPS</h2>
-                    @if (latestGpsData is null)
-                    {
-                        <p class="text-muted mb-0">No GPS data available yet.</p>
-                    }
-                    else
-                    {
-                        <dl class="row mb-0">
-                            <dt class="col-4">Latitude</dt>
-                            <dd class="col-8">@latestGpsData.Latitude</dd>
-                            <dt class="col-4">Longitude</dt>
-                            <dd class="col-8">@latestGpsData.Longitude</dd>
-                            <dt class="col-4">Timestamp</dt>
-                            <dd class="col-8">@latestGpsData.Timestamp.ToLocalTime()</dd>
-                        </dl>
-                    }
+    @if (isLoading && !sensorHistory.Any())
+    {
+        <div class="sensor-loading">
+            <em>Loading sensor data...</em>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 mb-4 sensor-metric-grid">
+            <div class="col-12 col-lg-6">
+                <div class="card shadow-sm h-100 sensor-panel">
+                    <div class="card-body">
+                        <div class="sensor-panel__header">
+                            <h2 class="h5 card-title mb-0">GPS</h2>
+                            <span class="sensor-pill sensor-pill--gps">Location</span>
+                        </div>
+                        @if (latestGpsData is null)
+                        {
+                            <p class="text-muted mb-0">No GPS data available yet.</p>
+                        }
+                        else
+                        {
+                            <div class="sensor-metrics">
+                                <div class="sensor-metric">
+                                    <span class="sensor-metric__label">Latitude</span>
+                                    <span class="sensor-metric__value">@latestGpsData.Latitude</span>
+                                </div>
+                                <div class="sensor-metric">
+                                    <span class="sensor-metric__label">Longitude</span>
+                                    <span class="sensor-metric__value">@latestGpsData.Longitude</span>
+                                </div>
+                                <div class="sensor-metric sensor-metric--wide">
+                                    <span class="sensor-metric__label">Timestamp</span>
+                                    <span class="sensor-metric__value">@latestGpsData.Timestamp.ToLocalTime()</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="card shadow-sm h-100 sensor-panel">
+                    <div class="card-body">
+                        <div class="sensor-panel__header">
+                            <h2 class="h5 card-title mb-0">Accelerometer</h2>
+                            <span class="sensor-pill sensor-pill--accel">Motion</span>
+                        </div>
+                        @if (latestAccelerometerData is null)
+                        {
+                            <p class="text-muted mb-0">No accelerometer data available yet.</p>
+                        }
+                        else
+                        {
+                            <div class="sensor-metrics sensor-metrics--three">
+                                <div class="sensor-metric">
+                                    <span class="sensor-metric__label">X</span>
+                                    <span class="sensor-metric__value">@latestAccelerometerData.X</span>
+                                </div>
+                                <div class="sensor-metric">
+                                    <span class="sensor-metric__label">Y</span>
+                                    <span class="sensor-metric__value">@latestAccelerometerData.Y</span>
+                                </div>
+                                <div class="sensor-metric">
+                                    <span class="sensor-metric__label">Z</span>
+                                    <span class="sensor-metric__value">@latestAccelerometerData.Z</span>
+                                </div>
+                                <div class="sensor-metric sensor-metric--wide">
+                                    <span class="sensor-metric__label">Timestamp</span>
+                                    <span class="sensor-metric__value">@latestAccelerometerData.Timestamp.ToLocalTime()</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-12 col-lg-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h2 class="h5 card-title">Accelerometer</h2>
-                    @if (latestAccelerometerData is null)
-                    {
-                        <p class="text-muted mb-0">No accelerometer data available yet.</p>
-                    }
-                    else
-                    {
-                        <dl class="row mb-0">
-                            <dt class="col-4">X</dt>
-                            <dd class="col-8">@latestAccelerometerData.X</dd>
-                            <dt class="col-4">Y</dt>
-                            <dd class="col-8">@latestAccelerometerData.Y</dd>
-                            <dt class="col-4">Z</dt>
-                            <dd class="col-8">@latestAccelerometerData.Z</dd>
-                            <dt class="col-4">Timestamp</dt>
-                            <dd class="col-8">@latestAccelerometerData.Timestamp.ToLocalTime()</dd>
-                        </dl>
-                    }
+        <div class="card shadow-sm sensor-panel">
+            <div class="card-body">
+                <div class="sensor-panel__header sensor-panel__header--stacked mb-3">
+                    <div>
+                        <h2 class="h5 card-title mb-1">Captured data</h2>
+                        <p class="text-muted mb-0">Latest samples from both mock sensors.</p>
+                    </div>
+                    <span class="sensor-pill sensor-pill--neutral">@sensorHistory.Count entries</span>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h2 class="h5 card-title mb-3">Captured data</h2>
-
-            @if (!sensorHistory.Any())
-            {
-                <p class="text-muted mb-0">No captured data yet.</p>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-striped align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Timestamp</th>
-                                <th>Details</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in sensorHistory)
-                            {
+                @if (!sensorHistory.Any())
+                {
+                    <p class="text-muted mb-0">No captured data yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive sensor-table-wrap">
+                        <table class="table align-middle mb-0 sensor-table">
+                            <thead>
                                 <tr>
-                                    <td>@GetSensorLabel(item)</td>
-                                    <td>@item.Timestamp.ToLocalTime()</td>
-                                    <td>@GetSensorDetails(item)</td>
+                                    <th>Type</th>
+                                    <th>Timestamp</th>
+                                    <th>Details</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
+                            </thead>
+                            <tbody>
+                                @foreach (var item in sensorHistory)
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="sensor-pill @GetSensorBadgeClass(item)">
+                                                @GetSensorLabel(item)
+                                            </span>
+                                        </td>
+                                        <td>@item.Timestamp.ToLocalTime()</td>
+                                        <td>@GetSensorDetails(item)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
         </div>
-    </div>
-}
+    }
+</div>
 
 @code {
     private bool isLoading;
@@ -148,6 +198,13 @@ else
         latestGpsData = null;
         latestAccelerometerData = null;
     }
+
+    private static string GetSensorBadgeClass(SensorData sensorData) => sensorData switch
+    {
+        GPSData => "sensor-pill--gps",
+        AccelerometerData => "sensor-pill--accel",
+        _ => "sensor-pill--neutral"
+    };
 
     private static string GetSensorLabel(SensorData sensorData) => sensorData switch
     {
