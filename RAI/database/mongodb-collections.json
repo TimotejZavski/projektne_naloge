@@ -1,0 +1,156 @@
+{
+  "database": "rai",
+  "collections": [
+    {
+      "name": "users",
+      "purpose": "Uporabniski racuni za spletno in mobilno aplikacijo.",
+      "requiredFields": [
+        "email",
+        "displayName",
+        "passwordHash",
+        "createdAtUtc"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "email"
+          ],
+          "unique": true
+        }
+      ]
+    },
+    {
+      "name": "devices",
+      "purpose": "Naprave, ki posiljajo senzorske podatke.",
+      "requiredFields": [
+        "deviceId",
+        "lastSeenAtUtc",
+        "isActive"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "deviceId"
+          ],
+          "unique": true
+        },
+        {
+          "fields": [
+            "userId"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "sensor_measurements",
+      "purpose": "Surove GPS in pospeskomer meritve iz mobilne aplikacije.",
+      "requiredFields": [
+        "deviceId",
+        "sensorType",
+        "timestampUtc",
+        "data",
+        "source"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "deviceId",
+            "timestampUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "sensorType",
+            "timestampUtc"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "playgrounds",
+      "purpose": "Javna igrisca in njihove lokacije.",
+      "requiredFields": [
+        "name",
+        "location",
+        "sports"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "location"
+          ],
+          "type": "2dsphere",
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "reservations",
+      "purpose": "Rezervacije igrisc.",
+      "requiredFields": [
+        "userId",
+        "playgroundId",
+        "startsAtUtc",
+        "endsAtUtc",
+        "status"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "userId",
+            "startsAtUtc"
+          ],
+          "unique": false
+        },
+        {
+          "fields": [
+            "playgroundId",
+            "startsAtUtc"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "weather_logs",
+      "purpose": "Vremenski podatki iz zunanjih API virov.",
+      "requiredFields": [
+        "sourceName",
+        "fetchedAtUtc",
+        "location",
+        "rawData"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "fetchedAtUtc"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "name": "analytics",
+      "purpose": "Obdelani podatki za grafe in pregled uporabe igrisc.",
+      "requiredFields": [
+        "type",
+        "periodStartUtc",
+        "periodEndUtc",
+        "result",
+        "createdAtUtc"
+      ],
+      "indexes": [
+        {
+          "fields": [
+            "type",
+            "periodStartUtc"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}
