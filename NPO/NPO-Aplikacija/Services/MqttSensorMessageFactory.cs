@@ -34,14 +34,14 @@ public static class MqttSensorMessageFactory
     private static string GetSensorType(SensorData sensorData) => sensorData switch
     {
         GPSData => "gps",
-        AccelerometerData => "accelerometer",
+        NPO_Aplikacija.Models.AccelerometerData => "accelerometer",
         _ => sensorData.Kind.ToString().ToLowerInvariant()
     };
 
     private static object BuildPayload(SensorData sensorData) => sensorData switch
     {
         GPSData gpsData => new MqttGpsPayload(gpsData.Latitude, gpsData.Longitude),
-        AccelerometerData accelerometerData => new MqttAccelerometerPayload(
+        NPO_Aplikacija.Models.AccelerometerData accelerometerData => new MqttAccelerometerPayload(
             accelerometerData.X,
             accelerometerData.Y,
             accelerometerData.Z),
