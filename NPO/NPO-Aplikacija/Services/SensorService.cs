@@ -10,6 +10,7 @@ public class SensorService : ISensorService
     private readonly IGPSSensor _gpsSensor;
     private readonly IAccelerometerSensor _accelerometerSensor;
     private readonly ISensorDataRepository _sensorDataRepository;
+    private readonly IMqttSensorPublisher _mqttSensorPublisher;
     private CancellationTokenSource? _monitoringCancellationTokenSource;
     private Task? _monitoringTask;
 
@@ -18,11 +19,13 @@ public class SensorService : ISensorService
     public SensorService(
         IGPSSensor gpsSensor,
         IAccelerometerSensor accelerometerSensor,
-        ISensorDataRepository sensorDataRepository)
+        ISensorDataRepository sensorDataRepository,
+        IMqttSensorPublisher mqttSensorPublisher)
     {
         _gpsSensor = gpsSensor;
         _accelerometerSensor = accelerometerSensor;
         _sensorDataRepository = sensorDataRepository;
+        _mqttSensorPublisher = mqttSensorPublisher;
     }
 
     public IGPSSensor GPSSensor => _gpsSensor;
@@ -85,6 +88,8 @@ public class SensorService : ISensorService
 
         await _sensorDataRepository.AddAsync(gpsData);
         await _sensorDataRepository.AddAsync(accelerometerData);
+        await _mqttSensorPublisher.PublishAsync(gpsData);
+        await _mqttSensorPublisher.PublishAsync(accelerometerData);
 
         var snapshot = (await _sensorDataRepository.GetAllAsync())
             .OrderByDescending(item => item.Timestamp)

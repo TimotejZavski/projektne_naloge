@@ -22,6 +22,7 @@ namespace NPO_Aplikacija
             builder.Services.AddSingleton<IAccelerometerSensor, AccelerometerSensor>();
             builder.Services.AddSingleton<ISensorService, SensorService>();
             builder.Services.AddSingleton<ISensorDataRepository, SensorDataRepository>();
+            builder.Services.AddSingleton<IMqttSensorPublisher, MqttSensorPublisher>();
 
 #if DEBUG
     		builder.Services.AddBlazorWebViewDeveloperTools();
