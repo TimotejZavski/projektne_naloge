@@ -1,0 +1,70 @@
+.register-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.register-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(320px, 1.15fr);
+    gap: 1.25rem;
+    align-items: start;
+    padding: 1.25rem;
+    border: 1px solid #dce3ec;
+    border-radius: 0.75rem;
+    background: #ffffff;
+}
+
+.register-copy {
+    padding: 0.4rem 0.2rem;
+}
+
+.register-kicker {
+    margin: 0 0 0.45rem;
+    color: #4b6b88;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.register-copy h1 {
+    margin-bottom: 0.65rem;
+    color: #13263b;
+    font-weight: 700;
+}
+
+.register-copy p {
+    color: #52657a;
+    max-width: 34rem;
+}
+
+.register-form {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.register-form .validation-message {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+}
+
+.register-terms {
+    margin: 0.35rem 0 0.9rem;
+}
+
+.register-submit {
+    justify-self: start;
+    min-width: 12rem;
+}
+
+@media (max-width: 767.98px) {
+    .register-panel {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+
+    .register-submit {
+        width: 100%;
+    }
+}
