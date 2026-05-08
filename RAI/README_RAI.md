@@ -74,3 +74,11 @@ npm run dev
 cd RAI/client
 npm install
 npm start
+
+## Viri podatkov in JSON sheme
+
+Za SCRUM-5 so v projektu dodani osnovni viri podatkov in JSON sheme:
+
+- `docs/viri-podatkov.md` opisuje senzorje in predvidene spletne API vire
+- `schemas/sensor-measurement.schema.json` definira GPS in pospeskomer meritve
+- `schemas/external-api-source.schema.json` definira podatke iz zunanjih API virov
