@@ -85,3 +85,45 @@ Dokument naj bo v PDF formatu.
 
 opomba:
 maui->android/ios (blazor one..)
+
+## MQTT JSON format
+
+Mobilna aplikacija po zajemu podatkov pripravi MQTT sporočilo v JSON formatu.
+Privzeti broker je `localhost:1883`, osnovni topic pa `smart-playgrounds`.
+
+Topic format:
+
+```text
+smart-playgrounds/devices/{deviceId}/sensors/{sensorType}
+```
+
+Primer GPS sporočila:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "deviceId": "device-1",
+  "sensorType": "gps",
+  "timestampUtc": "2026-05-08T12:00:00Z",
+  "data": {
+    "latitude": 46.5547,
+    "longitude": 15.6459
+  }
+}
+```
+
+Primer pospeškometra:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "deviceId": "device-1",
+  "sensorType": "accelerometer",
+  "timestampUtc": "2026-05-08T12:00:00Z",
+  "data": {
+    "x": 0.12,
+    "y": 0.03,
+    "z": 9.81
+  }
+}
+```
