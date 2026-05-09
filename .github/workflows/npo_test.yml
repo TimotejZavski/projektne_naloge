@@ -4,9 +4,12 @@ on:
   push:
     paths:
       - 'NPO/**'
+      - '.github/workflows/npo_test.yml'
   pull_request:
     paths:
       - 'NPO/**'
+      - '.github/workflows/npo_test.yml'
+  workflow_dispatch:
 
 jobs:
   android:
