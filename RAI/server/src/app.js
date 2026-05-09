@@ -45,9 +45,11 @@ function createApp() {
   // ------------------------------------------------------------------
   // Body parsing
   // ------------------------------------------------------------------
-  // Limit 10kb je dovolj za auth payloade in prepreci DoS s velikimi telesi.
-  app.use(express.json({ limit: '10kb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+  // Limit 128kb je strog (auth payloadi so KB-range, batch meritev pa
+  // do ~30kb pri 100 dokumentih). 128kb je se vedno premajhno za DoS,
+  // dejanske kvote pa nadzira Joi (batch.max=100, displayName.max=60, ...).
+  app.use(express.json({ limit: '128kb' }));
+  app.use(express.urlencoded({ extended: true, limit: '128kb' }));
   app.use(cookieParser());
 
   // NoSQL injection zascita: odstrani `$` in `.` iz vhoda (req.body, req.query, req.params).
