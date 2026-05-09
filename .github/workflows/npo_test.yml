@@ -13,7 +13,7 @@ jobs:
     name: Android build on self-hosted Pi
     runs-on: [self-hosted, Linux, ARM64]
     env:
-      DOTNET_INSTALL_DIR: ${{ runner.temp }}/dotnet
+      DOTNET_INSTALL_DIR: /home/raca/.dotnet
     steps:
       - uses: actions/checkout@v4
       - name: Setup .NET SDK
