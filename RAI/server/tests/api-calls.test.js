@@ -87,3 +87,79 @@ describe('Auth API klici', () => {
     expect(res.body.error.code).toBe('INVALID_CREDENTIALS');
   });
 });
+
+describe('Devices in measurements API klici', () => {
+  async function registerUser(email = 'api-flow@example.com') {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email,
+        password: 'StrongP@ss123',
+        displayName: 'API Flow Tester',
+      });
+
+    return res.body.accessToken;
+  }
+
+  function gpsMeasurement(deviceId) {
+    return {
+      schemaVersion: '1.0',
+      deviceId,
+      sensorType: 'gps',
+      timestampUtc: new Date(Date.now() - 1000).toISOString(),
+      data: {
+        latitude: 46.0569,
+        longitude: 14.5058,
+        accuracyMeters: 5,
+      },
+    };
+  }
+
+  it('registrira napravo, sprejme GPS meritev in jo vrne pri branju', async () => {
+    const token = await registerUser();
+    const deviceId = 'api-flow-device';
+
+    const deviceRes = await request(app)
+      .post('/api/devices')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ deviceId, platform: 'android', name: 'Testna naprava' });
+
+    expect(deviceRes.status).toBe(201);
+    expect(deviceRes.body.device.deviceId).toBe(deviceId);
+
+    const ingestRes = await request(app)
+      .post('/api/measurements')
+      .set('Authorization', `Bearer ${token}`)
+      .send(gpsMeasurement(deviceId));
+
+    expect(ingestRes.status).toBe(201);
+    expect(ingestRes.body.measurement.sensorType).toBe('gps');
+
+    const readRes = await request(app)
+      .get(`/api/measurements?deviceId=${deviceId}&sensorType=gps`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(readRes.status).toBe(200);
+    expect(readRes.body.measurements).toHaveLength(1);
+    expect(readRes.body.measurements[0].deviceId).toBe(deviceId);
+  });
+
+  it('zavrne meritev za napravo, ki ne pripada uporabniku', async () => {
+    const ownerToken = await registerUser('owner@example.com');
+    const otherToken = await registerUser('other@example.com');
+    const deviceId = 'owned-by-first-user';
+
+    await request(app)
+      .post('/api/devices')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ deviceId, platform: 'android' });
+
+    const res = await request(app)
+      .post('/api/measurements')
+      .set('Authorization', `Bearer ${otherToken}`)
+      .send(gpsMeasurement(deviceId));
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('DEVICE_NOT_FOUND');
+  });
+});
