@@ -3,20 +3,63 @@
  */
 
 const { setupTestDb, clearTestDb, teardownTestDb } = require('./setup');
+const request = require('supertest');
 
 jest.setTimeout(120000);
 
+let app;
 let SensorMeasurement;
+let cameraDataSchema;
 
 beforeAll(async () => {
   await setupTestDb();
+  app = require('../src/app')();
   SensorMeasurement = require('../src/models/SensorMeasurement');
+  ({ cameraDataSchema } = require('../src/validators/measurement.validator'));
 });
 
 afterEach(clearTestDb);
 afterAll(teardownTestDb);
 
 describe('SensorMeasurement model', () => {
+  async function registerUser(email = 'camera-flow@example.com') {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        email,
+        password: 'StrongP@ss123',
+        displayName: 'Camera Tester',
+      });
+
+    return res.body.accessToken;
+  }
+
+  async function registerDevice(token, deviceId = 'camera-node-01') {
+    return request(app)
+      .post('/api/devices')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ deviceId, platform: 'android', name: 'Camera node' });
+  }
+
+  function cameraMeasurement(deviceId) {
+    return {
+      schemaVersion: '1.0',
+      deviceId,
+      sensorType: 'camera',
+      timestampUtc: new Date(Date.now() - 1000).toISOString(),
+      data: {
+        captureId: 'capture-001',
+        mediaType: 'image/jpeg',
+        imageUrl: 'https://example.com/captures/capture-001.jpg',
+        gps: {
+          latitude: 46.0569,
+          longitude: 14.5058,
+          accuracyMeters: 5,
+        },
+      },
+    };
+  }
+
   it('shrani GPS meritev', async () => {
     const measurement = await SensorMeasurement.create({
       deviceId: 'phone-srecko-01',
@@ -39,6 +82,7 @@ describe('SensorMeasurement model', () => {
     const measurement = await SensorMeasurement.create({
       deviceId: 'camera-node-01',
       sensorType: 'camera',
+      timestampUtc: new Date('2026-05-09T10:00:00Z'),
       source: 'http',
       data: {
         captureId: 'capture-001',
@@ -57,28 +101,35 @@ describe('SensorMeasurement model', () => {
   });
 
   it('zavrne kamera meritev brez GPS lokacije', async () => {
-    const measurement = new SensorMeasurement({
-      deviceId: 'camera-node-02',
-      sensorType: 'camera',
-      data: {
-        captureId: 'capture-002',
-        mediaType: 'image/png',
-      },
+    const { error } = cameraDataSchema.validate({
+      captureId: 'capture-002',
+      mediaType: 'image/png',
     });
 
-    await expect(measurement.validate()).rejects.toThrow('data se ne ujema');
+    expect(error).toBeDefined();
+    expect(error.message).toContain('gps');
   });
 
-  it('zavrne GPS meritev z neveljavno sirino', async () => {
-    const measurement = new SensorMeasurement({
-      deviceId: 'phone-srecko-02',
-      sensorType: 'gps',
-      data: {
-        latitude: 120,
-        longitude: 14.5058,
-      },
-    });
+  it('sprejme kamera meritev prek API endpointa in jo vrne pri branju', async () => {
+    const token = await registerUser();
+    const deviceId = 'camera-node-api';
 
-    await expect(measurement.validate()).rejects.toThrow('data se ne ujema');
+    await registerDevice(token, deviceId);
+
+    const createRes = await request(app)
+      .post('/api/measurements')
+      .set('Authorization', `Bearer ${token}`)
+      .send(cameraMeasurement(deviceId));
+
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.measurement.sensorType).toBe('camera');
+
+    const readRes = await request(app)
+      .get(`/api/measurements?deviceId=${deviceId}&sensorType=camera`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(readRes.status).toBe(200);
+    expect(readRes.body.measurements).toHaveLength(1);
+    expect(readRes.body.measurements[0].data.gps.latitude).toBe(46.0569);
   });
 });
