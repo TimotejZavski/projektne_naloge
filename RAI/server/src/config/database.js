@@ -18,6 +18,16 @@ async function connectDatabase(uri = env.MONGODB_URI) {
 
   await mongoose.connect(uri, {
     serverSelectionTimeoutMS: 5000,
+    // autoIndex eksplicitno: zelimo da Mongoose ustvari indexe iz
+    // schema definicij (User.email unique, Session TTL,
+    // SensorMeasurement compound indexi, ...). Brez tega bi v
+    // produkciji (NODE_ENV=production) Mongoose autoIndex izklopil
+    // in unique constraints + performance indexi NE bi obstajali ob
+    // first run-u.
+    // V resni produkciji bi indexe ustvarili z eksplicitnim
+    // `Model.syncIndexes()` v migration skripti, za zdaj pa je
+    // autoIndex=true najvarnejsi default za "deploy iz nica".
+    autoIndex: true,
   });
 
   // eslint-disable-next-line no-console
