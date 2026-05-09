@@ -12,6 +12,10 @@
  *   - x, y, z: real (m/s2 ali g)
  *   - unit: opcijsko ('m/s2' default)
  *
+ * Kamera:
+ *   - captureId in mediaType identificirata zajem
+ *   - gps je obvezen, ker posnetek brez lokacije ni uporaben za mapo
+ *
  * Batch limit: 100 meritev na zahtevo.
  *   - omeji DoS surface (pri 10 Hz pospeskomer = 10 sekundni okvir)
  *   - omeji response time (single insertMany do 100 dokumentov < 50ms)
@@ -21,7 +25,7 @@
 const Joi = require('joi');
 
 const DEVICE_ID_PATTERN = /^[a-zA-Z0-9._-]{3,64}$/;
-const SENSOR_TYPES = ['gps', 'accelerometer'];
+const SENSOR_TYPES = ['gps', 'accelerometer', 'camera'];
 
 const gpsDataSchema = Joi.object({
   latitude: Joi.number().min(-90).max(90).required(),
@@ -36,6 +40,19 @@ const accelDataSchema = Joi.object({
   unit: Joi.string().valid('m/s2', 'g').optional(),
 }).unknown(false);
 
+const cameraGpsSchema = Joi.object({
+  latitude: Joi.number().min(-90).max(90).required(),
+  longitude: Joi.number().min(-180).max(180).required(),
+  accuracyMeters: Joi.number().min(0).optional(),
+}).unknown(false);
+
+const cameraDataSchema = Joi.object({
+  captureId: Joi.string().trim().min(1).max(120).required(),
+  mediaType: Joi.string().valid('image/jpeg', 'image/png', 'image/webp').required(),
+  imageUrl: Joi.string().uri().optional(),
+  gps: cameraGpsSchema.required(),
+}).unknown(false);
+
 const singleMeasurementSchema = Joi.object({
   schemaVersion: Joi.string().valid('1.0').default('1.0'),
   deviceId: Joi.string().pattern(DEVICE_ID_PATTERN).required(),
@@ -48,6 +65,7 @@ const singleMeasurementSchema = Joi.object({
     .conditional('sensorType', [
       { is: 'gps', then: gpsDataSchema.required() },
       { is: 'accelerometer', then: accelDataSchema.required() },
+      { is: 'camera', then: cameraDataSchema.required() },
     ])
     .required(),
 });
@@ -97,4 +115,5 @@ module.exports = {
   // Izpostavljeno za teste
   gpsDataSchema,
   accelDataSchema,
+  cameraDataSchema,
 };
