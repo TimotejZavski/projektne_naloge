@@ -116,3 +116,7 @@ Predvidena polja:
 - Surovi senzorski podatki in obdelani analiticni podatki so loceni.
 - Vremenski in drugi spletni viri se hranijo loceno od podatkov naprav.
 - `deviceId` povezuje MQTT/HTTP podatke z napravo v bazi.
+
+## Na kratko
+
+Ta model je samo osnova. Baza in osnovna skripta pripravljeni, ko bo narejen ER diagram+model lahko zazenem skripto in inicializiram bazo zares. Ustrezne ukaze dodan naknadno
