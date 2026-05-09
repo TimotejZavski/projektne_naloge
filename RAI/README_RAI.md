@@ -89,3 +89,21 @@ Za SCRUM-5 so v projektu dodani osnovni viri podatkov in JSON sheme:
 - `docs/viri-podatkov.md` opisuje senzorje in predvidene spletne API vire
 - `schemas/sensor-measurement.schema.json` definira GPS in pospeskomer meritve
 - `schemas/external-api-source.schema.json` definira podatke iz zunanjih API virov
+
+## Avtentikacija (SCRUM-13)
+
+Backend ima JWT + refresh-session avtentikacijski sistem. Polno
+dokumentacijo (endpoint-i, varnostne lastnosti, frontend integracija,
+edge cases) najdes v [`server/AUTH.md`](./server/AUTH.md).
+
+Hitri pregled:
+
+- `POST /api/auth/register` - registracija + samodejna prijava
+- `POST /api/auth/login` - prijava (vrne access token + nastavi refresh cookie)
+- `GET  /api/auth/me` - preverjanje access tokena, vrne uporabnika
+- `POST /api/auth/refresh` - rotacija access+refresh para
+- `POST /api/auth/logout` - odjava (revoka sejo)
+- `POST /api/auth/logout-all` - odjava vseh sej uporabnika
+
+Pred zagonom kopiraj `server/.env.example` v `server/.env` in nastavi
+`JWT_ACCESS_SECRET` ter `JWT_REFRESH_SECRET`.
