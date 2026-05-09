@@ -41,8 +41,8 @@ const loginLimiter = rateLimit({
 });
 
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1h
-  max: 10,
+  windowMs: env.RATE_LIMIT_REGISTER_WINDOW_MS,
+  max: env.RATE_LIMIT_REGISTER_MAX,
   standardHeaders: true,
   legacyHeaders: false,
   handler: jsonHandler,

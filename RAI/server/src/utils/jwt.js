@@ -43,11 +43,16 @@ function expiresInToSeconds(value) {
  */
 function signAccessToken(user) {
   if (!user || !user._id) throw new Error('signAccessToken: user._id manjka');
+  // jti naredi vsak access token unikatnen tudi pri zaporednih sign-ih v
+  // isti sekundi (sicer bi bila iat sekunda enaka in token bytewise enak,
+  // kar lahko zmede klienta in rotation logiko).
+  const jti = crypto.randomBytes(12).toString('hex');
   return jwt.sign(
     {
       sub: user._id.toString(),
       role: user.role || 'user',
       type: 'access',
+      jti,
     },
     env.JWT_ACCESS_SECRET,
     {
