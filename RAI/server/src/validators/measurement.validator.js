@@ -73,7 +73,10 @@ const listMeasurementsQuerySchema = Joi.object({
     'date.greater': 'to mora biti po from.',
   }),
   limit: Joi.number().integer().min(1).max(1000).default(100),
-  cursor: Joi.string().hex().length(24),
+  // Cursor je base64url-encoded compound (timestampUtc + _id). Tukaj
+  // samo grobo preverimo dolzino in znake; podrobno dekodiranje opravi
+  // controller (s 400 INVALID_CURSOR ce je neveljaven).
+  cursor: Joi.string().pattern(/^[A-Za-z0-9_-]{8,256}$/),
   sort: Joi.string().valid('asc', 'desc').default('desc'),
 });
 

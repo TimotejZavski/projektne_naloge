@@ -146,21 +146,45 @@ const ingestBatch = asyncHandler(async (req, res) => {
 // ============================================================
 // GET /api/measurements
 // ============================================================
-// Branje meritev s filtri + cursor-paginacijo.
+// Branje meritev s filtri + cursor-paginacijo PO timestampUtc.
 //
 // Query parametri (vsi opcijski):
 //   deviceId    - posamezna naprava (mora pripadati uporabniku)
 //   sensorType  - 'gps' | 'accelerometer'
 //   from, to    - casovni okvir (ISO 8601)
 //   limit       - 1..1000 (default 100)
-//   cursor      - _id zadnjega zapisa prejsne strani
+//   cursor      - opaque token (compound timestampUtc + _id) iz prejsne strani
 //   sort        - 'asc' | 'desc' po timestampUtc (default desc)
+//
+// Cursor format: base64 JSON `{ ts: <ISO>, id: <hex> }`. Compound (ts + id)
+// je nujen za stabilno paginacijo, ker je timestampUtc lahko enak za vec
+// meritev iz istega batch-a.
 //
 // Avtorizacija:
 //   - vedno samo uporabnikove meritve (filter.userId)
 //   - admin vidi vse (placeholder)
 //   - ce klient navede `deviceId`, ki mu NE pripada -> 404
 //     (anti-enumeration tujih device ID-jev)
+
+function encodeCursor(timestampUtc, id) {
+  const payload = JSON.stringify({ ts: timestampUtc.toISOString(), id: String(id) });
+  return Buffer.from(payload, 'utf8').toString('base64url');
+}
+
+function decodeCursor(cursor) {
+  try {
+    const json = Buffer.from(cursor, 'base64url').toString('utf8');
+    const obj = JSON.parse(json);
+    if (typeof obj.ts !== 'string' || typeof obj.id !== 'string') return null;
+    if (!/^[a-f0-9]{24}$/.test(obj.id)) return null;
+    const ts = new Date(obj.ts);
+    if (Number.isNaN(ts.getTime())) return null;
+    return { ts, id: new mongoose.Types.ObjectId(obj.id) };
+  } catch {
+    return null;
+  }
+}
+
 const list = asyncHandler(async (req, res) => {
   const { deviceId, sensorType, from, to, limit, cursor, sort } = req.query;
   const userId = req.user.id;
@@ -187,22 +211,42 @@ const list = asyncHandler(async (req, res) => {
     if (to) filter.timestampUtc.$lt = new Date(to);
   }
 
-  // Cursor paginacija: cursor je _id zadnjega zapisa.
-  // Pri sort=desc gremo nazaj v casu -> naslednja stran ima _id < cursor.
-  // Pri sort=asc gremo naprej -> naslednja stran ima _id > cursor.
+  // Compound cursor:
+  // sort=desc: hocemo (ts, _id) < (cursor.ts, cursor.id)
+  // sort=asc:  hocemo (ts, _id) > (cursor.ts, cursor.id)
   if (cursor) {
+    const decoded = decodeCursor(cursor);
+    if (!decoded) {
+      throw new AppError('Neveljaven cursor.', 400, 'INVALID_CURSOR');
+    }
     const op = sort === 'asc' ? '$gt' : '$lt';
-    filter._id = { [op]: new mongoose.Types.ObjectId(cursor) };
+    const cursorClause = {
+      $or: [
+        { timestampUtc: { [op]: decoded.ts } },
+        { timestampUtc: decoded.ts, _id: { [op]: decoded.id } },
+      ],
+    };
+    // Ce je `from`/`to` ze postavil filter.timestampUtc, ohranimo z $and.
+    if (filter.timestampUtc) {
+      const tsRange = filter.timestampUtc;
+      delete filter.timestampUtc;
+      filter.$and = [{ timestampUtc: tsRange }, cursorClause];
+    } else {
+      Object.assign(filter, cursorClause);
+    }
   }
 
   const sortDir = sort === 'asc' ? 1 : -1;
 
   const docs = await SensorMeasurement.find(filter)
-    .sort({ _id: sortDir })
+    .sort({ timestampUtc: sortDir, _id: sortDir })
     .limit(limit)
     .lean();
 
-  const nextCursor = docs.length === limit ? String(docs[docs.length - 1]._id) : null;
+  const nextCursor =
+    docs.length === limit
+      ? encodeCursor(docs[docs.length - 1].timestampUtc, docs[docs.length - 1]._id)
+      : null;
 
   res.json({
     measurements: docs,
