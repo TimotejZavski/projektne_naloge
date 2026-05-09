@@ -1,0 +1,62 @@
+# ============================================================
+# RAI backend - .dockerignore
+# ============================================================
+# Vse, kar tu navedeno, je IZKLJUCENO iz Docker build kontexta.
+# Cilj: manjsa slika + brez secret leak-a + manjsi cas builda.
+# ============================================================
+
+# Dependencies - reinstaliramo v Dockerfile (npm ci)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Lockfile za npm vkljucujemo (deterministicen build), ostale pa ne.
+# (package-lock.json je v gitignore na ravni repo, a v build kontextu
+# ga TBD potrebujemo - ce ne obstaja, npm ci bo failed -> dobro)
+yarn.lock
+pnpm-lock.yaml
+
+# Skrivnosti - NIKOLI ne vkljucimo .env v sliko
+.env
+.env.*
+!.env.example
+
+# Testne datoteke - niso potrebne v produkciji
+tests/
+**/*.test.js
+
+# Skripte - smoke testi za rocno preverjanje, ne potrebujemo v sliki
+scripts/
+
+# Dokumentacija - ne potrebujemo v sliki, je v repo
+*.md
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Docker meta - sami sebe ne vkljucujemo
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# Coverage / cache
+coverage/
+.nyc_output/
+.cache/
+tmp/
+temp/
+
+# Logs
+*.log
+logs/

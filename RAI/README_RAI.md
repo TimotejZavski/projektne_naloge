@@ -128,3 +128,18 @@ Hitri pregled:
 - `GET  /api/measurements` - branje s filtri (deviceId, sensorType, from/to, sort, cursor)
 - `GET  /api/measurements/:id` - posamicna
 - `GET  /api/devices/:id/measurements` - convenience helper
+
+## Docker okolje (SCRUM-23)
+
+Backend + MongoDB se zazenata z **enim ukazom**:
+
+```bash
+cd RAI/server
+cp .env.docker.example .env.docker
+# ... generiraj JWT secret-a (glej DOCKER.md)
+docker compose up -d --build
+curl http://localhost:5000/health
+```
+
+Polna dokumentacija (Dockerfile detajli, troubleshooting, pred-produkcijski
+checklist) v [`server/DOCKER.md`](./server/DOCKER.md).

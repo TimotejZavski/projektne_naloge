@@ -1,0 +1,106 @@
+# ============================================================
+# RAI backend + MongoDB - lokalni razvojni environment (SCRUM-23)
+# ============================================================
+#
+# Zagon:
+#   cd RAI/server
+#   cp .env.docker.example .env.docker          # in nastavi sekrete!
+#   docker compose up -d
+#
+# Preverjanje:
+#   docker compose ps                            # status servisov
+#   docker compose logs -f backend               # spremljanje logov
+#   curl http://localhost:5000/health            # health check
+#
+# Ustavitev:
+#   docker compose down                          # ohrani podatke v volumes
+#   docker compose down -v                       # zbrise tudi podatke (POZOR!)
+#
+# Mongoose pri prvi povezavi avtomatsko ustvari kolekcije + indekse iz
+# definicij v schema/*.js (User, Session, Device, SensorMeasurement) -
+# zato init_script.js NI obvezen, zaganja se SAMO ce hocemo eksplicitno
+# pre-create kolekcij (glej DOCKER.md).
+# ============================================================
+
+services:
+  # ----------------------------------------------------------
+  # MongoDB - persistent storage za vse kolekcije
+  # ----------------------------------------------------------
+  mongo:
+    image: mongo:7.0
+    container_name: rai-mongo
+    restart: unless-stopped
+    ports:
+      # Izpostavimo na host SAMO za razvoj (Compass / mongosh povezava).
+      # Pred produkcijo: odstrani 'ports', mongo naj bo dosegljiv SAMO
+      # interno preko Docker mreze (rai-network).
+      - "27017:27017"
+    volumes:
+      # Persistentno hranjenje podatkov - prezivi 'docker compose down'.
+      - rai_mongo_data:/data/db
+      - rai_mongo_config:/data/configdb
+    networks:
+      - rai-network
+    # Privzeto NI auth - razvojno okolje za hitri start. Pred produkcijo
+    # nastavi MONGO_INITDB_ROOT_USERNAME/PASSWORD env vars + auth=true
+    # (glej DOCKER.md - sekcija 'Pred produkcijo').
+    healthcheck:
+      # Mongo 7 se vec nima 'mongo' shell-a, uporabljamo mongosh.
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ----------------------------------------------------------
+  # RAI backend (Node.js + Express)
+  # ----------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rai-backend:dev
+    container_name: rai-backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        # Cakaj da je mongo healthy PRED zagon backend-a.
+        # Brez tega bi backend padel z ENOTFOUND v prvih sekundah.
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    env_file:
+      # Sekreti in konfiguracija - nikoli ne hardcode-aj v compose.
+      # Glej .env.docker.example za predlogo.
+      - .env.docker
+    environment:
+      # MONGODB_URI prepise vrednost iz .env.docker - znotraj Docker
+      # mreze je mongo dosegljiv preko service name 'mongo', NE localhost.
+      # (localhost bi pomenil sam backend container.)
+      MONGODB_URI: mongodb://mongo:27017/${MONGO_DATABASE:-rai}
+      NODE_ENV: ${NODE_ENV:-production}
+    networks:
+      - rai-network
+    # Healthcheck je definiran v Dockerfile (HEALTHCHECK direktiva).
+    # Tukaj lahko override-amo za hitrejsi start v devu.
+
+# ----------------------------------------------------------
+# Persistent volumes
+# ----------------------------------------------------------
+# Named volumes prezivi 'docker compose down' (ne pa 'down -v').
+# Lokacija: docker volume ls
+volumes:
+  rai_mongo_data:
+    name: rai_mongo_data
+  rai_mongo_config:
+    name: rai_mongo_config
+
+# ----------------------------------------------------------
+# Internal network
+# ----------------------------------------------------------
+# Servisi so dosegljivi med sabo preko service name (mongo, backend).
+# Bridge driver = Docker default, dovolj za en host.
+networks:
+  rai-network:
+    name: rai-network
+    driver: bridge
