@@ -22,7 +22,8 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x' # matches the project's TargetFrameworks after retargeting
+          dotnet-version: '8.0.420'
+          global-json-file: global.json
       - name: Show .NET info
         run: dotnet --info
       - name: Install MAUI android workload
