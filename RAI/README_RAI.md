@@ -108,6 +108,27 @@ Hitri pregled:
 Pred zagonom kopiraj `server/.env.example` v `server/.env` in nastavi
 `JWT_ACCESS_SECRET` ter `JWT_REFRESH_SECRET`.
 
+## REST API - devices in meritve (SCRUM-20)
+
+Endpoint-i za registracijo naprav in HTTP ingestion senzorskih meritev.
+Polna dokumentacija s primeri uporabe v [`server/API.md`](./server/API.md).
+
+Hitri pregled:
+
+**Devices** (vsi requireAuth, ownership check):
+- `POST   /api/devices` - registracija naprave (idempotent)
+- `GET    /api/devices` - lista (cursor paginacija, filtri)
+- `GET    /api/devices/:id` - posamicna
+- `PATCH  /api/devices/:id` - posodobitev metadata
+- `DELETE /api/devices/:id` - cascade brisanje + meritve
+
+**Measurements** (vsi requireAuth + DEVICE_NOT_FOUND za tuje naprave):
+- `POST /api/measurements` - sprejem ene meritve
+- `POST /api/measurements/batch` - sprejem do 100 meritev (priporoceno za 10Hz pospeskomer)
+- `GET  /api/measurements` - branje s filtri (deviceId, sensorType, from/to, sort, cursor)
+- `GET  /api/measurements/:id` - posamicna
+- `GET  /api/devices/:id/measurements` - convenience helper
+
 ## Docker okolje (SCRUM-23)
 
 Backend + MongoDB se zazenata z **enim ukazom**:
