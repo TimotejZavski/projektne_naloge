@@ -23,8 +23,10 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x' # adjust to your project's SDK (matches project TargetFrameworks)
+      - name: Show .NET info
+        run: dotnet --info
       - name: Install MAUI android workload
-        run: dotnet workload install maui-android --include-previews
+        run: dotnet workload install maui-android --skip-manifest-update
       - name: Restore
         run: dotnet restore NPO/NPO-Aplikacija/NPO-Aplikacija.csproj
       - name: Build Android
