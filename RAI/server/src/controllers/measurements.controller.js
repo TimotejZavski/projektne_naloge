@@ -20,6 +20,8 @@
  *     (atomic, ne blokira)
  */
 
+const mongoose = require('mongoose');
+
 const Device = require('../models/Device');
 const SensorMeasurement = require('../models/SensorMeasurement');
 const AppError = require('../utils/AppError');
@@ -141,4 +143,105 @@ const ingestBatch = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { ingestSingle, ingestBatch };
+// ============================================================
+// GET /api/measurements
+// ============================================================
+// Branje meritev s filtri + cursor-paginacijo.
+//
+// Query parametri (vsi opcijski):
+//   deviceId    - posamezna naprava (mora pripadati uporabniku)
+//   sensorType  - 'gps' | 'accelerometer'
+//   from, to    - casovni okvir (ISO 8601)
+//   limit       - 1..1000 (default 100)
+//   cursor      - _id zadnjega zapisa prejsne strani
+//   sort        - 'asc' | 'desc' po timestampUtc (default desc)
+//
+// Avtorizacija:
+//   - vedno samo uporabnikove meritve (filter.userId)
+//   - admin vidi vse (placeholder)
+//   - ce klient navede `deviceId`, ki mu NE pripada -> 404
+//     (anti-enumeration tujih device ID-jev)
+const list = asyncHandler(async (req, res) => {
+  const { deviceId, sensorType, from, to, limit, cursor, sort } = req.query;
+  const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
+  // Ce je deviceId podan, preveri lastnistvo PRED query-jem
+  // (sicer bi vrnili prazen rezultat, kar bi razkrilo da deviceId
+  // obstaja a ni nas).
+  if (deviceId) {
+    const ownedFilter = isAdmin ? { deviceId } : { deviceId, userId };
+    const exists = await Device.exists(ownedFilter);
+    if (!exists) {
+      throw new AppError('Naprava ne obstaja.', 404, 'NOT_FOUND');
+    }
+  }
+
+  const filter = {};
+  if (!isAdmin) filter.userId = new mongoose.Types.ObjectId(userId);
+  if (deviceId) filter.deviceId = deviceId;
+  if (sensorType) filter.sensorType = sensorType;
+  if (from || to) {
+    filter.timestampUtc = {};
+    if (from) filter.timestampUtc.$gte = new Date(from);
+    if (to) filter.timestampUtc.$lt = new Date(to);
+  }
+
+  // Cursor paginacija: cursor je _id zadnjega zapisa.
+  // Pri sort=desc gremo nazaj v casu -> naslednja stran ima _id < cursor.
+  // Pri sort=asc gremo naprej -> naslednja stran ima _id > cursor.
+  if (cursor) {
+    const op = sort === 'asc' ? '$gt' : '$lt';
+    filter._id = { [op]: new mongoose.Types.ObjectId(cursor) };
+  }
+
+  const sortDir = sort === 'asc' ? 1 : -1;
+
+  const docs = await SensorMeasurement.find(filter)
+    .sort({ _id: sortDir })
+    .limit(limit)
+    .lean();
+
+  const nextCursor = docs.length === limit ? String(docs[docs.length - 1]._id) : null;
+
+  res.json({
+    measurements: docs,
+    pagination: { limit, sort, nextCursor, hasMore: nextCursor !== null },
+  });
+});
+
+// ============================================================
+// GET /api/devices/:id/measurements
+// ============================================================
+// Convenience: enako kot GET /api/measurements?deviceId=...
+// a sprejme :id (Device ObjectId) namesto string deviceId.
+const listForDevice = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
+  const device = await Device.findById(req.params.id);
+  if (!device || (!isAdmin && String(device.userId) !== String(userId))) {
+    throw new AppError('Naprava ne obstaja.', 404, 'NOT_FOUND');
+  }
+
+  // Premostimo na `list` z deviceId postavljen v query.
+  req.query.deviceId = device.deviceId;
+  return list(req, res);
+});
+
+// ============================================================
+// GET /api/measurements/:id
+// ============================================================
+// Branje posamezne meritve (npr. za debug ali link iz analitike).
+const getById = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
+  const m = await SensorMeasurement.findById(req.params.id);
+  if (!m || (!isAdmin && String(m.userId) !== String(userId))) {
+    throw new AppError('Meritev ne obstaja.', 404, 'NOT_FOUND');
+  }
+  res.json({ measurement: m.toJSON() });
+});
+
+module.exports = { ingestSingle, ingestBatch, list, listForDevice, getById };

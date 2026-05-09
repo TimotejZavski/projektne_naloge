@@ -14,7 +14,11 @@ const {
   listDevicesQuerySchema,
   deviceIdParamSchema,
 } = require('../validators/device.validator');
+const {
+  listMeasurementsQuerySchema,
+} = require('../validators/measurement.validator');
 const ctrl = require('../controllers/devices.controller');
+const measurementsCtrl = require('../controllers/measurements.controller');
 
 const router = express.Router();
 
@@ -29,5 +33,12 @@ router.patch('/:id',
   ctrl.update
 );
 router.delete('/:id', validate(deviceIdParamSchema, 'params'), ctrl.remove);
+
+// Convenience: meritve za napravo (po Device ObjectId v poti)
+router.get('/:id/measurements',
+  validate(deviceIdParamSchema, 'params'),
+  validate(listMeasurementsQuerySchema, 'query'),
+  measurementsCtrl.listForDevice
+);
 
 module.exports = router;

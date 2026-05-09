@@ -11,6 +11,8 @@ const { requireAuth } = require('../middleware/auth');
 const {
   singleMeasurementSchema,
   batchMeasurementsSchema,
+  listMeasurementsQuerySchema,
+  measurementIdParamSchema,
 } = require('../validators/measurement.validator');
 const ctrl = require('../controllers/measurements.controller');
 
@@ -21,6 +23,7 @@ router.use(requireAuth);
 router.post('/', validate(singleMeasurementSchema), ctrl.ingestSingle);
 router.post('/batch', validate(batchMeasurementsSchema), ctrl.ingestBatch);
 
-// GET endpoint pride v commitu 4.
+router.get('/', validate(listMeasurementsQuerySchema, 'query'), ctrl.list);
+router.get('/:id', validate(measurementIdParamSchema, 'params'), ctrl.getById);
 
 module.exports = router;
