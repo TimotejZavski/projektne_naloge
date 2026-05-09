@@ -1,0 +1,46 @@
+# Docker Compose za MQTT broker
+# Naloga: SCRUM-14 (in priprava za SCRUM-37: zagon brokerja v containerju)
+#
+# Zagon:
+#   docker compose -f SA/mqtt/docker-compose.yml up -d
+# Ustavitev:
+#   docker compose -f SA/mqtt/docker-compose.yml down
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: smart-playgrounds-mqtt
+    restart: unless-stopped
+    ports:
+      # Standardni MQTT vmesnik za mobilno aplikacijo in backend
+      - "1883:1883"
+      # WebSocket vmesnik za morebitne brskalniske kliente
+      - "9001:9001"
+    volumes:
+      # Konfiguracija (read-only)
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      # Persistenca stanja sej (subscriptions, queued messages)
+      - mosquitto_data:/mosquitto/data
+      # Logi za naknadno analizo / monitoring (SCRUM-43)
+      - mosquitto_log:/mosquitto/log
+    networks:
+      - smart-playgrounds
+    healthcheck:
+      # Preverjamo, ali broker odgovarja na CONNECT.
+      # mosquitto_sub se vrne s kodo 0, ce uspesno vzpostavi povezavo.
+      test:
+        - CMD-SHELL
+        - "mosquitto_sub -h localhost -p 1883 -t '$$SYS/#' -C 1 -W 3 || exit 1"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+
+networks:
+  smart-playgrounds:
+    driver: bridge
+    name: smart-playgrounds
