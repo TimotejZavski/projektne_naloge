@@ -107,3 +107,18 @@ Hitri pregled:
 
 Pred zagonom kopiraj `server/.env.example` v `server/.env` in nastavi
 `JWT_ACCESS_SECRET` ter `JWT_REFRESH_SECRET`.
+
+## Docker okolje (SCRUM-23)
+
+Backend + MongoDB se zazenata z **enim ukazom**:
+
+```bash
+cd RAI/server
+cp .env.docker.example .env.docker
+# ... generiraj JWT secret-a (glej DOCKER.md)
+docker compose up -d --build
+curl http://localhost:5000/health
+```
+
+Polna dokumentacija (Dockerfile detajli, troubleshooting, pred-produkcijski
+checklist) v [`server/DOCKER.md`](./server/DOCKER.md).
