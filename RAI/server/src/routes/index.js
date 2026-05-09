@@ -9,6 +9,9 @@ const router = express.Router();
 // Auth rute (SCRUM-13): /api/auth/*
 router.use('/auth', require('./auth.routes'));
 
+// Devices rute (SCRUM-20): /api/devices/*
+router.use('/devices', require('./devices.routes'));
+
 router.get('/_ping', (req, res) => res.json({ ok: true }));
 
 // LEGACY (samo dev): generic CRUD endpointi iz prvotnega index.js.
