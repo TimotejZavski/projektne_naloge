@@ -1,23 +1,54 @@
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
+/**
+ * Vstopna tocka RAI backend streznika.
+ *
+ * Vrstni red:
+ *   1. nalozimo env (validacija obveznih spremenljivk)
+ *   2. povezava na MongoDB
+ *   3. zazenemo Express app
+ *   4. graceful shutdown na SIGINT/SIGTERM
+ */
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const env = require('./src/config/env');
+const { connectDatabase, disconnectDatabase } = require('./src/config/database');
+const createApp = require('./src/app');
 
-// connect to mongdb (default localhost empty DB "rai")
-mongoose.connect('mongodb://localhost:27017/rai');
+let server;
 
-// generis REST endpoints
-app.get('/api/:collection', async (req, res) => {
-  const docs = await mongoose.connection.db.collection(req.params.collection).find({}).toArray();
-  res.json(docs);
+async function start() {
+  try {
+    await connectDatabase();
+    const app = createApp();
+
+    server = app.listen(env.PORT, () => {
+      // eslint-disable-next-line no-console
+      console.log(`[server] RAI backend posluha na http://localhost:${env.PORT}`);
+      console.log(`[server] NODE_ENV=${env.NODE_ENV}`);
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[FATAL] Zagon strezniku ni uspel:', err);
+    process.exit(1);
+  }
+}
+
+async function shutdown(signal) {
+  // eslint-disable-next-line no-console
+  console.log(`\n[server] Prejet ${signal}, zaustavitev...`);
+  if (server) {
+    await new Promise((resolve) => server.close(resolve));
+  }
+  await disconnectDatabase();
+  // eslint-disable-next-line no-console
+  console.log('[server] Cisto zaustavljen.');
+  process.exit(0);
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('unhandledRejection', (reason) => {
+  // eslint-disable-next-line no-console
+  console.error('[unhandledRejection]', reason);
+  shutdown('unhandledRejection');
 });
 
-app.post('/api/:collection', async (req, res) => {
-  const result = await mongoose.connection.db.collection(req.params.collection).insertOne(req.body);
-  res.json(result);
-});
-
-app.listen(5000, () => console.log('Server running on http://localhost:5000'));
+start();
