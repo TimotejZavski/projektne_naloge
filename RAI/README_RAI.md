@@ -65,6 +65,13 @@ Paket s predstavitvijo, programsko kodo, izvozom podatkovne baze in povezavo do 
 
 opomba:
 (zagon)
+# terminal0 (inicializacija baze - samo prvi zagon!)
+cd RAI/database
+npm install
+node init_script.js
+
+po potrebi npm install mongoose inside server mape
+
 # terminal1
 cd RAI/server
 npm install
