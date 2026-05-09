@@ -30,3 +30,7 @@ obj/
 *.svclog
 *.VC.db
 *.VC.VC.opendb
+
+# npm lock files (koji god nivo mape)
+**/package-lock.json
+**/yarn.lock
