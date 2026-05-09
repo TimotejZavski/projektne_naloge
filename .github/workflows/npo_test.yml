@@ -1,0 +1,27 @@
+name: Test NPO builds
+
+on:
+  push:
+    paths:
+      - 'NPO/**'
+  pull_request:
+    paths:
+      - 'NPO/**'
+
+jobs:
+  android:
+    name: Android build on self-hosted Pi
+    runs-on: [self-hosted, Linux, ARM64]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x' # adjust to your project's SDK (matches project TargetFrameworks)
+      - name: Install MAUI android workload
+        run: dotnet workload install maui-android --include-previews
+      - name: Restore
+        run: dotnet restore NPO/NPO-Aplikacija/NPO-Aplikacija.csproj
+      - name: Build Android
+        run: dotnet build NPO/NPO-Aplikacija/NPO-Aplikacija.csproj -f net10.0-android -c Release
+
