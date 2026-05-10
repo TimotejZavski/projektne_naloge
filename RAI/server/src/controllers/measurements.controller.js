@@ -20,12 +20,13 @@
  *     (atomic, ne blokira)
  */
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const Device = require('../models/Device');
-const SensorMeasurement = require('../models/SensorMeasurement');
-const AppError = require('../utils/AppError');
-const asyncHandler = require('../utils/asyncHandler');
+const Device = require("../models/Device");
+const SensorMeasurement = require("../models/SensorMeasurement");
+const ProcessedMeasurement = require("../models/ProcessedMeasurement");
+const AppError = require("../utils/AppError");
+const asyncHandler = require("../utils/asyncHandler");
 
 /**
  * Preveri lastnistvo naprav za vec deviceId-jev naenkrat.
@@ -37,7 +38,9 @@ async function loadOwnedDevicesMap(deviceIds, userId) {
   const devices = await Device.find({
     deviceId: { $in: deviceIds },
     userId,
-  }).select('_id deviceId userId').lean();
+  })
+    .select("_id deviceId userId")
+    .lean();
 
   const map = new Map();
   for (const d of devices) map.set(d.deviceId, d);
@@ -52,12 +55,14 @@ const ingestSingle = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
   // Lastnistvo naprave: preveri da naprava obstaja IN da je uporabnikova.
-  const device = await Device.findOne({ deviceId: m.deviceId, userId }).select('_id deviceId');
+  const device = await Device.findOne({ deviceId: m.deviceId, userId }).select(
+    "_id deviceId",
+  );
   if (!device) {
     throw new AppError(
-      'Naprava ne obstaja oz. ne pripada uporabniku.',
+      "Naprava ne obstaja oz. ne pripada uporabniku.",
       404,
-      'DEVICE_NOT_FOUND'
+      "DEVICE_NOT_FOUND",
     );
   }
 
@@ -67,15 +72,15 @@ const ingestSingle = asyncHandler(async (req, res) => {
     sensorType: m.sensorType,
     timestampUtc: m.timestampUtc,
     data: m.data,
-    source: 'http',
-    schemaVersion: m.schemaVersion || '1.0',
+    source: "http",
+    schemaVersion: m.schemaVersion || "1.0",
   });
 
   // Fire-and-forget posodobitev lastSeen (ne blokiramo response-a, a
   // logirajmo morebitno napako).
   Device.touchLastSeen(m.deviceId).catch((err) => {
     // eslint-disable-next-line no-console
-    console.error('[touchLastSeen] napaka:', err.message);
+    console.error("[touchLastSeen] napaka:", err.message);
   });
 
   res.status(201).json({ measurement: doc.toJSON() });
@@ -100,7 +105,11 @@ const ingestBatch = asyncHandler(async (req, res) => {
   for (let i = 0; i < measurements.length; i++) {
     const m = measurements[i];
     if (!ownedMap.has(m.deviceId)) {
-      rejected.push({ index: i, deviceId: m.deviceId, reason: 'DEVICE_NOT_FOUND' });
+      rejected.push({
+        index: i,
+        deviceId: m.deviceId,
+        reason: "DEVICE_NOT_FOUND",
+      });
     } else {
       accepted.push({
         deviceId: m.deviceId,
@@ -108,8 +117,8 @@ const ingestBatch = asyncHandler(async (req, res) => {
         sensorType: m.sensorType,
         timestampUtc: new Date(m.timestampUtc),
         data: m.data,
-        source: 'http',
-        schemaVersion: m.schemaVersion || '1.0',
+        source: "http",
+        schemaVersion: m.schemaVersion || "1.0",
       });
     }
   }
@@ -118,22 +127,24 @@ const ingestBatch = asyncHandler(async (req, res) => {
   // registriral naprav).
   if (accepted.length === 0) {
     throw new AppError(
-      'Nobena naprava iz batch-a ne pripada uporabniku.',
+      "Nobena naprava iz batch-a ne pripada uporabniku.",
       404,
-      'NO_OWNED_DEVICES',
-      rejected
+      "NO_OWNED_DEVICES",
+      rejected,
     );
   }
 
-  const inserted = await SensorMeasurement.insertMany(accepted, { ordered: false });
+  const inserted = await SensorMeasurement.insertMany(accepted, {
+    ordered: false,
+  });
 
   // Posodobi lastSeen za vse naprave v batchu (atomic bulk).
   Device.updateMany(
     { deviceId: { $in: uniqueDeviceIds.filter((id) => ownedMap.has(id)) } },
-    { $set: { lastSeenAtUtc: new Date(), updatedAtUtc: new Date() } }
+    { $set: { lastSeenAtUtc: new Date(), updatedAtUtc: new Date() } },
   ).catch((err) => {
     // eslint-disable-next-line no-console
-    console.error('[batch touchLastSeen] napaka:', err.message);
+    console.error("[batch touchLastSeen] napaka:", err.message);
   });
 
   res.status(201).json({
@@ -167,15 +178,18 @@ const ingestBatch = asyncHandler(async (req, res) => {
 //     (anti-enumeration tujih device ID-jev)
 
 function encodeCursor(timestampUtc, id) {
-  const payload = JSON.stringify({ ts: timestampUtc.toISOString(), id: String(id) });
-  return Buffer.from(payload, 'utf8').toString('base64url');
+  const payload = JSON.stringify({
+    ts: timestampUtc.toISOString(),
+    id: String(id),
+  });
+  return Buffer.from(payload, "utf8").toString("base64url");
 }
 
 function decodeCursor(cursor) {
   try {
-    const json = Buffer.from(cursor, 'base64url').toString('utf8');
+    const json = Buffer.from(cursor, "base64url").toString("utf8");
     const obj = JSON.parse(json);
-    if (typeof obj.ts !== 'string' || typeof obj.id !== 'string') return null;
+    if (typeof obj.ts !== "string" || typeof obj.id !== "string") return null;
     if (!/^[a-f0-9]{24}$/.test(obj.id)) return null;
     const ts = new Date(obj.ts);
     if (Number.isNaN(ts.getTime())) return null;
@@ -188,7 +202,7 @@ function decodeCursor(cursor) {
 const list = asyncHandler(async (req, res) => {
   const { deviceId, sensorType, from, to, limit, cursor, sort } = req.query;
   const userId = req.user.id;
-  const isAdmin = req.user.role === 'admin';
+  const isAdmin = req.user.role === "admin";
 
   // Ce je deviceId podan, preveri lastnistvo PRED query-jem
   // (sicer bi vrnili prazen rezultat, kar bi razkrilo da deviceId
@@ -197,7 +211,7 @@ const list = asyncHandler(async (req, res) => {
     const ownedFilter = isAdmin ? { deviceId } : { deviceId, userId };
     const exists = await Device.exists(ownedFilter);
     if (!exists) {
-      throw new AppError('Naprava ne obstaja.', 404, 'NOT_FOUND');
+      throw new AppError("Naprava ne obstaja.", 404, "NOT_FOUND");
     }
   }
 
@@ -217,9 +231,9 @@ const list = asyncHandler(async (req, res) => {
   if (cursor) {
     const decoded = decodeCursor(cursor);
     if (!decoded) {
-      throw new AppError('Neveljaven cursor.', 400, 'INVALID_CURSOR');
+      throw new AppError("Neveljaven cursor.", 400, "INVALID_CURSOR");
     }
-    const op = sort === 'asc' ? '$gt' : '$lt';
+    const op = sort === "asc" ? "$gt" : "$lt";
     const cursorClause = {
       $or: [
         { timestampUtc: { [op]: decoded.ts } },
@@ -236,7 +250,7 @@ const list = asyncHandler(async (req, res) => {
     }
   }
 
-  const sortDir = sort === 'asc' ? 1 : -1;
+  const sortDir = sort === "asc" ? 1 : -1;
 
   const docs = await SensorMeasurement.find(filter)
     .sort({ timestampUtc: sortDir, _id: sortDir })
@@ -245,7 +259,10 @@ const list = asyncHandler(async (req, res) => {
 
   const nextCursor =
     docs.length === limit
-      ? encodeCursor(docs[docs.length - 1].timestampUtc, docs[docs.length - 1]._id)
+      ? encodeCursor(
+          docs[docs.length - 1].timestampUtc,
+          docs[docs.length - 1]._id,
+        )
       : null;
 
   res.json({
@@ -261,11 +278,11 @@ const list = asyncHandler(async (req, res) => {
 // a sprejme :id (Device ObjectId) namesto string deviceId.
 const listForDevice = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  const isAdmin = req.user.role === 'admin';
+  const isAdmin = req.user.role === "admin";
 
   const device = await Device.findById(req.params.id);
   if (!device || (!isAdmin && String(device.userId) !== String(userId))) {
-    throw new AppError('Naprava ne obstaja.', 404, 'NOT_FOUND');
+    throw new AppError("Naprava ne obstaja.", 404, "NOT_FOUND");
   }
 
   // Premostimo na `list` z deviceId postavljen v query.
@@ -279,13 +296,89 @@ const listForDevice = asyncHandler(async (req, res) => {
 // Branje posamezne meritve (npr. za debug ali link iz analitike).
 const getById = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  const isAdmin = req.user.role === 'admin';
+  const isAdmin = req.user.role === "admin";
 
   const m = await SensorMeasurement.findById(req.params.id);
   if (!m || (!isAdmin && String(m.userId) !== String(userId))) {
-    throw new AppError('Meritev ne obstaja.', 404, 'NOT_FOUND');
+    throw new AppError("Meritev ne obstaja.", 404, "NOT_FOUND");
   }
   res.json({ measurement: m.toJSON() });
 });
 
-module.exports = { ingestSingle, ingestBatch, list, listForDevice, getById };
+// ============================================================
+// GET /api/measurements/processed
+// ============================================================
+// Branje agregirani/obdelanih podatkov.
+// Query parametri:
+//   deviceId       - (opcijsko) naprava
+//   sensorType     - (opcijsko) 'gps' | 'accelerometer'
+//   aggregationType- (opcijsko) '5min' | '1hour' | 'daily'
+//   limit          - default 100, max 1000
+const listProcessed = asyncHandler(async (req, res) => {
+  const { deviceId, sensorType, aggregationType, limit } = req.query;
+  const userId = req.user.id;
+  const isAdmin = req.user.role === "admin";
+
+  // Validiraj limit
+  let limitInt = parseInt(limit, 10) || 100;
+  limitInt = Math.min(Math.max(limitInt, 1), 1000);
+
+  // Zgradi query
+  const query = {};
+  if (!isAdmin) query.userId = userId;
+  if (deviceId) query.deviceId = deviceId;
+  if (sensorType) query.sensorType = sensorType;
+  if (aggregationType) query.aggregationType = aggregationType;
+
+  const measurements = await ProcessedMeasurement.find(query)
+    .sort({ periodEndUtc: -1 })
+    .limit(limitInt)
+    .lean();
+
+  res.json({ measurements, count: measurements.length });
+});
+
+// ============================================================
+// POST /api/measurements/aggregate (admin only)
+// ============================================================
+// Ročno zagani agregiracijo - za testiranje/debugging.
+// Body: { aggregationType: '5min' | '1hour' | 'daily' }
+const triggerAggregation = asyncHandler(async (req, res) => {
+  // Preprecimo anonimnim uporabnikom.
+  // V development/test okolju dovolimo tudi ne-adminom (smoke testi).
+  const isDev = process.env.NODE_ENV !== "production";
+  if (!req.user || (!isDev && req.user.role !== "admin")) {
+    throw new AppError("Samo administratorji imajo dostop.", 403, "FORBIDDEN");
+  }
+
+  const { aggregationType } = req.body;
+
+  // Validiraj
+  if (!["5min", "1hour", "daily"].includes(aggregationType)) {
+    throw new AppError(
+      "aggregationType mora biti 5min, 1hour ali daily",
+      400,
+      "VALIDATION_ERROR",
+    );
+  }
+
+  // Dinamicno nalozi scheduler
+  const DataAggregationService = require("../services/DataAggregationService");
+
+  const result = await DataAggregationService.aggregate(aggregationType);
+
+  res.json({
+    message: `Agregacija ${aggregationType} je bila uspesna`,
+    result,
+  });
+});
+
+module.exports = {
+  ingestSingle,
+  ingestBatch,
+  list,
+  listForDevice,
+  getById,
+  listProcessed,
+  triggerAggregation,
+};

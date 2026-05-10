@@ -84,11 +84,16 @@ const measurementIdParamSchema = Joi.object({
   id: Joi.string().hex().length(24).required(),
 });
 
+const triggerAggregationSchema = Joi.object({
+  aggregationType: Joi.string().valid('5min', '1hour', 'daily').required(),
+});
+
 module.exports = {
   singleMeasurementSchema,
   batchMeasurementsSchema,
   listMeasurementsQuerySchema,
   measurementIdParamSchema,
+  triggerAggregationSchema,
   // Izpostavljeno za teste
   gpsDataSchema,
   accelDataSchema,

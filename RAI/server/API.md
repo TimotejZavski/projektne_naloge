@@ -495,15 +495,243 @@ const r = await api.get(`/api/measurements?sensorType=gps&from=${encodeURICompon
 
 ---
 
+## 3.4 Processed (Agregirani) Measurements
+
+Agregirani/obdelani senzorski podatki (povprečja, statistika, itd.).
+Ti se avtomatsko generirajo iz raw meritev vsakih 5 minut, uro in dan.
+
+### GET `/api/measurements/processed`
+
+Branje agregirani senzorskih podatkov s filtri.
+
+**Query parametri (vsi opcijski):**
+
+```
+?sensorType=gps             # 'gps' | 'accelerometer'
+&aggregationType=5min       # '5min' | '1hour' | 'daily'
+&deviceId=phone-123         # specifična naprava
+&limit=100                  # 1..1000, default 100
+```
+
+**Response 200:**
+
+```json
+{
+  "measurements": [
+    {
+      "_id": "65fa...",
+      "deviceId": "phone-123",
+      "sensorType": "gps",
+      "aggregationType": "5min",
+      "periodStartUtc": "2026-05-10T10:30:00Z",
+      "periodEndUtc": "2026-05-10T10:35:00Z",
+      "aggregatedData": {
+        "avgLatitude": 46.12345,
+        "avgLongitude": 14.98765,
+        "minAccuracy": 3.5,
+        "maxAccuracy": 8.2,
+        "sampleCount": 45
+      },
+      "sampleCount": 45,
+      "processedAtUtc": "2026-05-10T10:35:30Z"
+    }
+  ],
+  "count": 10
+}
+```
+
+**Za accelerometer:**
+
+```json
+{
+  "aggregatedData": {
+    "avgX": 0.234,
+    "avgY": 0.156,
+    "avgZ": 9.812,
+    "maxAccel": 1.234,
+    "detectionStatus": "moving",
+    "sampleCount": 120
+  }
+}
+```
+
+- `detectionStatus`: `"moving"` (gibanje zaznano) ali `"stationary"` (mirovanje)
+
+**Napake:**
+| Status | Code | Pomen |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | invalid `sensorType` ali `aggregationType` |
+| 404 | `NOT_FOUND` | filter `deviceId` ne pripada uporabniku |
+
+---
+
+### POST `/api/measurements/aggregate` (admin only)
+
+Ročno zaži agregiracijo (za testiranje/debugging).
+
+**Request body:**
+
+```json
+{
+  "aggregationType": "5min"
+}
+```
+
+**Response 200:**
+
+```json
+{
+  "message": "Agregacija 5min je bila uspesna",
+  "result": {
+    "aggregatedCount": 12,
+    "devicesProcessed": 3
+  }
+}
+```
+
+**Napake:**
+| Status | Code | Pomen |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | invalid `aggregationType` |
+| 403 | `FORBIDDEN` | samo admin ima dostop |
+
+---
+
 ## 7. Testiranje
 
 ```bash
 cd RAI/server
-npm test                                       # 109 jest testov (auth + devices)
+npm test                                           # 109 jest testov (auth + devices)
 
 # Smoke skripti (potrebuje ziv server na :5000)
-node scripts/smoke-device-model.js             # 16 model+validator testov
-node scripts/smoke-devices-e2e.js              # 31 devices CRUD testov
-node scripts/smoke-measurements-ingest.js      # 33 ingestion testov
-node scripts/smoke-measurements-read.js        # 29 read testov
+node scripts/smoke-device-model.js                 # 16 model+validator testov
+node scripts/smoke-devices-e2e.js                  # 31 devices CRUD testov
+node scripts/smoke-measurements-ingest.js          # 33 ingestion testov
+node scripts/smoke-measurements-read.js            # 29 read testov
+
+# Novi smoke test-i za SCRUM-21 (raw + processed + MQTT)
+node scripts/smoke-mqtt-ingest.js                  # MQTT ingestija + raw branje
+node scripts/smoke-processed-measurements.js       # Processed measurements + aggregacija
+```
+
+### Kako testirati lokalno (step-by-step)
+
+**Predpogoji:**
+1. MongoDB na `localhost` (ali prilagodi `.env`)
+2. MQTT broker (Mosquitto) na `localhost:1883`
+3. RAI server na `localhost:5000`
+
+**Korak 1: Zaženi MongoDB**
+```bash
+# Če imaš MongoDB lokalno
+mongod
+```
+
+**Korak 2: Zaženi MQTT broker**
+```bash
+# Če imaš Mosquitto nameščen
+mosquitto -p 1883
+
+# Oziroma Docker:
+docker run -p 1883:1883 eclipse-mosquitto
+```
+
+**Korak 3: Zaženi RAI server**
+```bash
+cd RAI/server
+npm run dev
+# Strežnik posluša na http://localhost:5000
+```
+
+**Korak 4: Zaženi smoke test-e (v novo okno)**
+```bash
+cd RAI/server
+
+# Test MQTT ingestije in raw meritev
+node scripts/smoke-mqtt-ingest.js
+
+# Test procesiranih meritev in agregacijo
+node scripts/smoke-processed-measurements.js
+```
+
+**Pričakovan izpis (oba testa morata imeti 0 napak):**
+
+`smoke-mqtt-ingest.js`:
+```
+=== MQTT Ingestion + Raw Measurements Test ===
+...
+7. Reading raw measurements from API...
+  ✓ Raw measurements read: 200
+  ✓ Raw measurements count: 6 >= 6
+  ✓ GPS measurements found: 3 >= 3
+  ✓ GPS data has latitude and longitude
+  ✓ Accelerometer measurements found: 3 >= 3
+  ✓ Accelerometer data has x, y, z
+
+=== Test Summary ===
+Passed: 8
+Failed: 0
+```
+
+`smoke-processed-measurements.js`:
+```
+=== Processed Measurements Test ===
+...
+4. Triggering 5min aggregation (admin only)...
+  ✓ POST /api/measurements/aggregate returns 200
+  ✓ Response has message
+    Aggregated 2 groups, 1 devices
+...
+=== Test Summary ===
+Passed: 9
+Failed: 0
+```
+
+> ⚠️ Testa **morata** teči v tem vrstnem redu: `smoke-mqtt-ingest.js` prvi (vstavi raw podatke),
+> nato `smoke-processed-measurements.js` (agregira raw → processed).
+
+**Korak 5: Ročno testiranje (curl ali Postman)**
+
+Registracija:
+```bash
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "StrongP@ss123",
+    "displayName": "Test User"
+  }'
+# Shrani accessToken
+```
+
+Registracija naprave:
+```bash
+curl -X POST http://localhost:5000/api/devices \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deviceId": "test-device-1",
+    "name": "Test Device",
+    "platform": "android"
+  }'
+```
+
+Branje raw meritev:
+```bash
+curl http://localhost:5000/api/measurements \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+Branje processed meritev:
+```bash
+curl http://localhost:5000/api/measurements/processed \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+Ročna agregiacija (admin):
+```bash
+curl -X POST http://localhost:5000/api/measurements/aggregate \
+  -H "Authorization: Bearer ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"aggregationType": "5min"}'
 ```
