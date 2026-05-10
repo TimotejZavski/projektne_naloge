@@ -650,9 +650,45 @@ cd RAI/server
 # Test MQTT ingestije in raw meritev
 node scripts/smoke-mqtt-ingest.js
 
-# Test processed measurements in agregiracijo
+# Test procesiranih meritev in agregacijo
 node scripts/smoke-processed-measurements.js
 ```
+
+**Pričakovan izpis (oba testa morata imeti 0 napak):**
+
+`smoke-mqtt-ingest.js`:
+```
+=== MQTT Ingestion + Raw Measurements Test ===
+...
+7. Reading raw measurements from API...
+  ✓ Raw measurements read: 200
+  ✓ Raw measurements count: 6 >= 6
+  ✓ GPS measurements found: 3 >= 3
+  ✓ GPS data has latitude and longitude
+  ✓ Accelerometer measurements found: 3 >= 3
+  ✓ Accelerometer data has x, y, z
+
+=== Test Summary ===
+Passed: 8
+Failed: 0
+```
+
+`smoke-processed-measurements.js`:
+```
+=== Processed Measurements Test ===
+...
+4. Triggering 5min aggregation (admin only)...
+  ✓ POST /api/measurements/aggregate returns 200
+  ✓ Response has message
+    Aggregated 2 groups, 1 devices
+...
+=== Test Summary ===
+Passed: 9
+Failed: 0
+```
+
+> ⚠️ Testa **morata** teči v tem vrstnem redu: `smoke-mqtt-ingest.js` prvi (vstavi raw podatke),
+> nato `smoke-processed-measurements.js` (agregira raw → processed).
 
 **Korak 5: Ročno testiranje (curl ali Postman)**
 

@@ -12,11 +12,12 @@
  *   // V app.js ali index.js
  */
 
-const mqtt = require('mqtt');
-const SensorMeasurement = require('../models/SensorMeasurement');
-const ProcessedMeasurement = require('../models/ProcessedMeasurement');
-const MeasurementValidator = require('./MeasurementValidator');
-const env = require('../config/env');
+const mqtt = require("mqtt");
+const SensorMeasurement = require("../models/SensorMeasurement");
+const ProcessedMeasurement = require("../models/ProcessedMeasurement");
+const Device = require("../models/Device");
+const MeasurementValidator = require("./MeasurementValidator");
+const env = require("../config/env");
 
 class MqttListener {
   constructor() {
@@ -31,7 +32,7 @@ class MqttListener {
    */
   async connect() {
     return new Promise((resolve, reject) => {
-      const brokerUrl = env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
+      const brokerUrl = env.MQTT_BROKER_URL || "mqtt://localhost:1883";
 
       // eslint-disable-next-line no-console
       console.log(`[MQTT] Connecting to ${brokerUrl}...`);
@@ -42,13 +43,13 @@ class MqttListener {
         connectTimeout: 5000,
       });
 
-      this.client.on('connect', () => {
+      this.client.on("connect", () => {
         // eslint-disable-next-line no-console
-        console.log('[MQTT] Connected successfully');
+        console.log("[MQTT] Connected successfully");
         this.isConnected = true;
 
         // Naročaj se na vse senzorske podatke
-        const topic = 'smart-playgrounds/devices/+/sensors/+';
+        const topic = "smart-playgrounds/devices/+/sensors/+";
         this.client.subscribe(topic, (err) => {
           if (err) {
             // eslint-disable-next-line no-console
@@ -62,20 +63,20 @@ class MqttListener {
         });
       });
 
-      this.client.on('message', (topic, payload) => {
+      this.client.on("message", (topic, payload) => {
         this.handleMessage(topic, payload);
       });
 
-      this.client.on('error', (err) => {
+      this.client.on("error", (err) => {
         // eslint-disable-next-line no-console
-        console.error('[MQTT] Connection error:', err);
+        console.error("[MQTT] Connection error:", err);
         this.isConnected = false;
         reject(err);
       });
 
-      this.client.on('disconnect', () => {
+      this.client.on("disconnect", () => {
         // eslint-disable-next-line no-console
-        console.log('[MQTT] Disconnected');
+        console.log("[MQTT] Disconnected");
         this.isConnected = false;
       });
     });
@@ -89,8 +90,8 @@ class MqttListener {
   async handleMessage(topic, payload) {
     try {
       // Parse topic
-      const topicParts = topic.split('/');
-      if (topicParts.length !== 5 || topicParts[0] !== 'smart-playgrounds') {
+      const topicParts = topic.split("/");
+      if (topicParts.length !== 5 || topicParts[0] !== "smart-playgrounds") {
         // eslint-disable-next-line no-console
         console.warn(`[MQTT] Invalid topic format: ${topic}`);
         return;
@@ -105,7 +106,10 @@ class MqttListener {
         messageData = JSON.parse(payload.toString());
       } catch (parseErr) {
         // eslint-disable-next-line no-console
-        console.error(`[MQTT] JSON parse error for topic ${topic}:`, parseErr.message);
+        console.error(
+          `[MQTT] JSON parse error for topic ${topic}:`,
+          parseErr.message,
+        );
         return;
       }
 
@@ -121,7 +125,10 @@ class MqttListener {
       const validation = MeasurementValidator.validateMeasurement(measurement);
       if (!validation.isValid) {
         // eslint-disable-next-line no-console
-        console.warn(`[MQTT] Validation failed for ${deviceId}/${sensorType}:`, validation.errors);
+        console.warn(
+          `[MQTT] Validation failed for ${deviceId}/${sensorType}:`,
+          validation.errors,
+        );
         return;
       }
 
@@ -136,13 +143,23 @@ class MqttListener {
       // Dodaj v cache (čisti ga vsake 5 minut)
       this.deduplicationCache.set(dedupeKey, Date.now());
 
+      // Najdi lastnika naprave (ce obstaja)
+      const device = await Device.findOne({
+        deviceId: validation.cleanedData.deviceId,
+      })
+        .select("userId")
+        .lean();
+
+      const userId = device ? device.userId : null;
+
       // Shrani RAW meritev v bazo
       const rawMeasurement = new SensorMeasurement({
         deviceId: validation.cleanedData.deviceId,
+        userId,
         sensorType: validation.cleanedData.sensorType,
         timestampUtc: validation.cleanedData.timestampUtc,
         data: validation.cleanedData.data,
-        source: 'mqtt',
+        source: "mqtt",
       });
 
       await rawMeasurement.save();
@@ -155,7 +172,7 @@ class MqttListener {
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('[MQTT] Error handling message:', err.message);
+      console.error("[MQTT] Error handling message:", err.message);
     }
   }
 
@@ -188,7 +205,7 @@ class MqttListener {
       if (this.client) {
         this.client.end(() => {
           // eslint-disable-next-line no-console
-          console.log('[MQTT] Disconnected');
+          console.log("[MQTT] Disconnected");
           this.isConnected = false;
           resolve();
         });
