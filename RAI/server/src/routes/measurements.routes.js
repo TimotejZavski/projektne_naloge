@@ -13,6 +13,7 @@ const {
   batchMeasurementsSchema,
   listMeasurementsQuerySchema,
   measurementIdParamSchema,
+  triggerAggregationSchema,
 } = require('../validators/measurement.validator');
 const ctrl = require('../controllers/measurements.controller');
 
@@ -23,6 +24,11 @@ router.use(requireAuth);
 router.post('/', validate(singleMeasurementSchema), ctrl.ingestSingle);
 router.post('/batch', validate(batchMeasurementsSchema), ctrl.ingestBatch);
 
+// Agregacijski endpointi (PRED /:id paramet!)
+router.post('/aggregate', validate(triggerAggregationSchema), ctrl.triggerAggregation);
+router.get('/processed', ctrl.listProcessed);
+
+// Splošni endpointi
 router.get('/', validate(listMeasurementsQuerySchema, 'query'), ctrl.list);
 router.get('/:id', validate(measurementIdParamSchema, 'params'), ctrl.getById);
 

@@ -24,6 +24,7 @@ const mongoose = require('mongoose');
 
 const Device = require('../models/Device');
 const SensorMeasurement = require('../models/SensorMeasurement');
+const ProcessedMeasurement = require('../models/ProcessedMeasurement');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -288,4 +289,70 @@ const getById = asyncHandler(async (req, res) => {
   res.json({ measurement: m.toJSON() });
 });
 
-module.exports = { ingestSingle, ingestBatch, list, listForDevice, getById };
+// ============================================================
+// GET /api/measurements/processed
+// ============================================================
+// Branje agregirani/obdelanih podatkov.
+// Query parametri:
+//   deviceId       - (opcijsko) naprava
+//   sensorType     - (opcijsko) 'gps' | 'accelerometer'
+//   aggregationType- (opcijsko) '5min' | '1hour' | 'daily'
+//   limit          - default 100, max 1000
+const listProcessed = asyncHandler(async (req, res) => {
+  const { deviceId, sensorType, aggregationType, limit } = req.query;
+  const userId = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+
+  // Validiraj limit
+  let limitInt = parseInt(limit, 10) || 100;
+  limitInt = Math.min(Math.max(limitInt, 1), 1000);
+
+  // Zgradi query
+  const query = {};
+  if (!isAdmin) query.userId = userId;
+  if (deviceId) query.deviceId = deviceId;
+  if (sensorType) query.sensorType = sensorType;
+  if (aggregationType) query.aggregationType = aggregationType;
+
+  const measurements = await ProcessedMeasurement.find(query)
+    .sort({ periodEndUtc: -1 })
+    .limit(limitInt)
+    .lean();
+
+  res.json({ measurements, count: measurements.length });
+});
+
+// ============================================================
+// POST /api/measurements/aggregate (admin only)
+// ============================================================
+// Ročno zagani agregiracijo - za testiranje/debugging.
+// Body: { aggregationType: '5min' | '1hour' | 'daily' }
+const triggerAggregation = asyncHandler(async (req, res) => {
+  // Preprecimo anonimnim uporabnikom
+  if (!req.user || req.user.role !== 'admin') {
+    throw new AppError('Samo administratorji imajo dostop.', 403, 'FORBIDDEN');
+  }
+
+  const { aggregationType } = req.body;
+
+  // Validiraj
+  if (!['5min', '1hour', 'daily'].includes(aggregationType)) {
+    throw new AppError(
+      'aggregationType mora biti 5min, 1hour ali daily',
+      400,
+      'VALIDATION_ERROR'
+    );
+  }
+
+  // Dinamicno nalozi scheduler
+  const DataAggregationService = require('../services/DataAggregationService');
+
+  const result = await DataAggregationService.aggregate(aggregationType);
+
+  res.json({
+    message: `Agregacija ${aggregationType} je bila uspesna`,
+    result,
+  });
+});
+
+module.exports = { ingestSingle, ingestBatch, list, listForDevice, getById, listProcessed, triggerAggregation };
