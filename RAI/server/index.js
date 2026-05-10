@@ -11,8 +11,10 @@
 const env = require('./src/config/env');
 const { connectDatabase, disconnectDatabase } = require('./src/config/database');
 const createApp = require('./src/app');
+const MqttListener = require('./src/services/MqttListener');
 
 let server;
+let mqttListener;
 
 async function start() {
   try {
@@ -24,6 +26,23 @@ async function start() {
       console.log(`[server] RAI backend posluha na http://localhost:${env.PORT}`);
       console.log(`[server] NODE_ENV=${env.NODE_ENV}`);
     });
+
+    // Zaženi MQTT listener
+    try {
+      mqttListener = new MqttListener();
+      await mqttListener.connect();
+      // eslint-disable-next-line no-console
+      console.log('[server] MQTT listener started');
+
+      // Očisti deduplikacijski cache vsake 5 minut
+      setInterval(() => {
+        mqttListener.cleanDeduplicationCache();
+      }, 5 * 60 * 1000);
+    } catch (mqttErr) {
+      // eslint-disable-next-line no-console
+      console.warn('[server] MQTT listener failed to connect:', mqttErr.message);
+      // Ne prekini servera, samo opozori
+    }
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[FATAL] Zagon strezniku ni uspel:', err);
@@ -34,6 +53,17 @@ async function start() {
 async function shutdown(signal) {
   // eslint-disable-next-line no-console
   console.log(`\n[server] Prejet ${signal}, zaustavitev...`);
+
+  // Zaustavi MQTT listener
+  if (mqttListener) {
+    try {
+      await mqttListener.disconnect();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[server] Error disconnecting MQTT:', err.message);
+    }
+  }
+
   if (server) {
     await new Promise((resolve) => server.close(resolve));
   }

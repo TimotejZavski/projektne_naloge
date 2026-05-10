@@ -91,4 +91,6 @@ module.exports = {
 
   COOKIE_SECURE: toBool(process.env.COOKIE_SECURE, false),
   COOKIE_SAME_SITE: process.env.COOKIE_SAME_SITE || 'lax',
+
+  MQTT_BROKER_URL: process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883',
 };

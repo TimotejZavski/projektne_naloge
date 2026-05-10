@@ -20,7 +20,8 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.23.1",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "mqtt": "^5.15.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",
