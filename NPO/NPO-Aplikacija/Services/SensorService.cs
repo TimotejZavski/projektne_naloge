@@ -88,8 +88,8 @@ public class SensorService : ISensorService
 
         await _sensorDataRepository.AddAsync(gpsData);
         await _sensorDataRepository.AddAsync(accelerometerData);
-        await _mqttSensorPublisher.PublishAsync(gpsData);
-        await _mqttSensorPublisher.PublishAsync(accelerometerData);
+        _ = _mqttSensorPublisher.PublishAsync(gpsData);
+        _ = _mqttSensorPublisher.PublishAsync(accelerometerData);
 
         var snapshot = (await _sensorDataRepository.GetAllAsync())
             .OrderByDescending(item => item.Timestamp)
