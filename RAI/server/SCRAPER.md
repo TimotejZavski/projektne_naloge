@@ -20,3 +20,17 @@ npm run scraper:smoke
 ```
 
 Smoke test trenutno uporablja lokalni fixture, zato ne potrebuje delujoce baze, API endpointov ali omrezja.
+
+## Ekstrakcija podatkov
+
+SCRUM-32 doda ekstrakcijo relevantnih podatkov iz surovih scraper rezultatov.
+Trenutno je podprt primer prometnih stevcev, ki vrne normalizirane zapise z
+lokacijo, stevilom vozil, povprecno hitrostjo in casom meritve.
+
+```bash
+cd RAI/server
+npm run scraper:extract:smoke
+```
+
+Ta korak samo pripravi podatke za nadaljnjo obdelavo. Ne klice API-ja in ne
+zapisuje v MongoDB, zato ne posega v SCRUM-33 ali SCRUM-35.
