@@ -9,6 +9,7 @@
  * `data` je raznolik glede na sensorType:
  *   - gps:           { latitude, longitude, accuracyMeters? }
  *   - accelerometer: { x, y, z, unit? }
+ *   - camera:        { captureId, mediaType, imageUrl?, gps }
  *
  * Mongoose `Mixed` tip pusti `data` brez sheme - validacijo opravimo
  * v Joi shemi pred shranjevanjem (boljsi error messages + tighter
@@ -20,7 +21,7 @@
 
 const mongoose = require('mongoose');
 
-const SENSOR_TYPES = ['gps', 'accelerometer'];
+const SENSOR_TYPES = ['gps', 'accelerometer', 'camera'];
 const SOURCES = ['http', 'mqtt'];
 
 const sensorMeasurementSchema = new mongoose.Schema(

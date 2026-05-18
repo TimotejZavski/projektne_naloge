@@ -29,7 +29,8 @@
       "type": "string",
       "enum": [
         "gps",
-        "accelerometer"
+        "accelerometer",
+        "camera"
       ]
     },
     "timestampUtc": {
@@ -82,6 +83,57 @@
             "unit": {
               "type": "string",
               "default": "m/s2"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "captureId",
+            "mediaType",
+            "gps"
+          ],
+          "properties": {
+            "captureId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mediaType": {
+              "type": "string",
+              "enum": [
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+              ]
+            },
+            "imageUrl": {
+              "type": "string",
+              "format": "uri"
+            },
+            "gps": {
+              "type": "object",
+              "required": [
+                "latitude",
+                "longitude"
+              ],
+              "properties": {
+                "latitude": {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                "longitude": {
+                  "type": "number",
+                  "minimum": -180,
+                  "maximum": 180
+                },
+                "accuracyMeters": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": false
             }
           },
           "additionalProperties": false
