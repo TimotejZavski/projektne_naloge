@@ -2,6 +2,7 @@ const ScraperRunner = require('./ScraperRunner');
 const HttpSourceClient = require('./HttpSourceClient');
 const { getSources } = require('./sources');
 const { extractFromRawResult, extractTrafficCounters } = require('./extractors');
+const ScraperIngestionService = require('./ingestion/ScraperIngestionService');
 
 module.exports = {
   ScraperRunner,
@@ -9,4 +10,5 @@ module.exports = {
   extractFromRawResult,
   extractTrafficCounters,
   getSources,
+  ScraperIngestionService,
 };

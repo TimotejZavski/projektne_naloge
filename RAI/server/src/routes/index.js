@@ -15,6 +15,9 @@ router.use('/devices', require('./devices.routes'));
 // Sensor measurements (SCRUM-20): /api/measurements/*
 router.use('/measurements', require('./measurements.routes'));
 
+// Scraper ingestion (SCRUM-33): /api/scraper/*
+router.use('/scraper', require('./scraper.routes'));
+
 router.get('/_ping', (req, res) => res.json({ ok: true }));
 
 // LEGACY (samo dev): generic CRUD endpointi iz prvotnega index.js.
