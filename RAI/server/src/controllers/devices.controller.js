@@ -114,6 +114,25 @@ const getById = asyncHandler(async (req, res) => {
 });
 
 // ============================================================
+// GET /api/devices/by-device-id/:deviceId  (SCRUM-29)
+// ============================================================
+// Pridobi napravo po uporabniku vidnem deviceId stringu (npr. "pixel-8-azur").
+// Komplementarno k `GET /:id` (ki uporablja Mongo ObjectId) — frontend praviloma
+// pozna le deviceId iz MQTT topic-ov, ne ObjectId-ja.
+//
+// 404 v obeh primerih: ne obstaja ALI ni uporabnikova (anti-enumeration).
+const getByDeviceId = asyncHandler(async (req, res) => {
+  const filter = { deviceId: req.params.deviceId };
+  if (!isAdmin(req)) filter.userId = new mongoose.Types.ObjectId(req.user.id);
+
+  const device = await Device.findOne(filter);
+  if (!device) {
+    throw new AppError('Naprava ne obstaja.', 404, 'NOT_FOUND');
+  }
+  res.json({ device: device.toJSON() });
+});
+
+// ============================================================
 // PATCH /api/devices/:id
 // ============================================================
 const update = asyncHandler(async (req, res) => {
@@ -158,4 +177,4 @@ const remove = asyncHandler(async (req, res) => {
   res.status(204).end();
 });
 
-module.exports = { create, list, getById, update, remove };
+module.exports = { create, list, getById, getByDeviceId, update, remove };

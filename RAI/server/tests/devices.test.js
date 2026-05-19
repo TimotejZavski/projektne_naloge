@@ -250,6 +250,63 @@ describe('GET /api/devices/:id', () => {
 });
 
 // ============================================================
+// GET /api/devices/by-device-id/:deviceId  (SCRUM-29)
+// ============================================================
+describe('GET /api/devices/by-device-id/:deviceId', () => {
+  it('401 brez auth', async () => {
+    const res = await request(app).get('/api/devices/by-device-id/foo-bar');
+    expect(res.status).toBe(401);
+  });
+
+  it('200 vrne svojo napravo', async () => {
+    const { token } = await registerAndLogin();
+    await registerDevice(token, 'lookup-1', { name: 'Lookup', platform: 'ios' });
+    const res = await request(app)
+      .get('/api/devices/by-device-id/lookup-1')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.device.deviceId).toBe('lookup-1');
+    expect(res.body.device.name).toBe('Lookup');
+    expect(res.body.device.platform).toBe('ios');
+  });
+
+  it('404 za tujo napravo (anti-enumeration)', async () => {
+    const { token: tA } = await registerAndLogin('aa@x.com');
+    const { token: tB } = await registerAndLogin('bb@x.com');
+    await registerDevice(tA, 'a-private');
+    const res = await request(app)
+      .get('/api/devices/by-device-id/a-private')
+      .set('Authorization', `Bearer ${tB}`);
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('404 za neobstojec deviceId', async () => {
+    const { token } = await registerAndLogin();
+    const res = await request(app)
+      .get('/api/devices/by-device-id/does-not-exist')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(404);
+  });
+
+  it('400 za neveljaven deviceId (presledki)', async () => {
+    const { token } = await registerAndLogin();
+    const res = await request(app)
+      .get('/api/devices/by-device-id/has%20spaces')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(400);
+  });
+
+  it('400 za prekratek deviceId', async () => {
+    const { token } = await registerAndLogin();
+    const res = await request(app)
+      .get('/api/devices/by-device-id/ab')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(400);
+  });
+});
+
+// ============================================================
 // PATCH + DELETE /api/devices/:id
 // ============================================================
 describe('PATCH/DELETE /api/devices/:id', () => {
