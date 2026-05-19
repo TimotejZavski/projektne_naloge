@@ -13,6 +13,7 @@ const {
   updateDeviceSchema,
   listDevicesQuerySchema,
   deviceIdParamSchema,
+  deviceIdLookupParamSchema,
 } = require('../validators/device.validator');
 const {
   listMeasurementsQuerySchema,
@@ -26,6 +27,15 @@ router.use(requireAuth);
 
 router.post('/', validate(registerDeviceSchema), ctrl.create);
 router.get('/', validate(listDevicesQuerySchema, 'query'), ctrl.list);
+
+// SCRUM-29: lookup po user-facing deviceId stringu (mora biti PRED `/:id`
+// da `by-device-id` ne zaide v ObjectId validator).
+router.get(
+  '/by-device-id/:deviceId',
+  validate(deviceIdLookupParamSchema, 'params'),
+  ctrl.getByDeviceId
+);
+
 router.get('/:id', validate(deviceIdParamSchema, 'params'), ctrl.getById);
 router.patch('/:id',
   validate(deviceIdParamSchema, 'params'),

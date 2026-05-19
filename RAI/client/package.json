@@ -6,15 +6,25 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-scripts": "5.0.1"
-    },
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2"
+  },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build"
+    "build": "react-scripts build",
+    "test": "react-scripts test --watchAll=false",
+    "test:watch": "react-scripts test"
   },
   "proxy": "http://localhost:5000",
   "browserslist": [
     "> 0.2%",
     "not dead",
     "not op_mini all"
-  ]
+  ],
+  "jest": {
+    "resetMocks": false
+  }
 }

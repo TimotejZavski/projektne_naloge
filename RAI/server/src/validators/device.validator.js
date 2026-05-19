@@ -55,9 +55,21 @@ const deviceIdParamSchema = Joi.object({
   }),
 });
 
+// Path param: user-facing deviceId (SCRUM-29).
+// Loci se od `id` (ObjectId) — `deviceId` je string, ki ga oddaja mobilna
+// aplikacija (npr. 'pixel-8-azur'). Uporabljen v `GET /api/devices/by-device-id/:deviceId`.
+const deviceIdLookupParamSchema = Joi.object({
+  deviceId: Joi.string().pattern(DEVICE_ID_PATTERN).required().messages({
+    'string.pattern.base':
+      'deviceId mora biti 3-64 znakov, samo a-z, A-Z, 0-9, ._-',
+    'any.required': 'deviceId je obvezen.',
+  }),
+});
+
 module.exports = {
   registerDeviceSchema,
   updateDeviceSchema,
   listDevicesQuerySchema,
   deviceIdParamSchema,
+  deviceIdLookupParamSchema,
 };
