@@ -97,6 +97,18 @@ Topic format:
 smart-playgrounds/devices/{deviceId}/sensors/{sensorType}
 ```
 
+## SCRUM-28 Pregled posameznih naprav in meritev
+
+NPO aplikacija ima stran za pregled posamezne naprave na poti `/devices`.
+Podprti sta tudi direktni poti:
+
+- `/devices/gps`
+- `/devices/accelerometer`
+
+Stran omogoca izbiro naprave, prikaz aktivnega stanja, zadnje meritve,
+casa zadnje meritve in tabelarni pregled lokalno zajetih meritev iz
+`ISensorDataRepository`.
+
 Primer GPS sporočila:
 
 ```json
