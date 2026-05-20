@@ -1,5 +1,250 @@
-﻿@page "/"
+@page "/"
+@page "/dashboard"
+@inject ISensorService SensorService
+@inject ISensorDataRepository SensorDataRepository
+@implements IAsyncDisposable
 
-<h1>Hello, world!</h1>
+<PageTitle>Dashboard</PageTitle>
 
-Welcome to your new app.
+<div class="dashboard-page">
+    <section class="dashboard-header">
+        <div>
+            <p class="dashboard-kicker">NPO pregled</p>
+            <h1>Dashboard</h1>
+            <p class="dashboard-subtitle">Pregled vseh povezanih naprav in zadnjih zajetih meritev.</p>
+        </div>
+
+        <div class="dashboard-actions">
+            <button class="btn btn-primary" @onclick="RefreshAsync" disabled="@isLoading">
+                @(isLoading ? "Osvezujem..." : "Osvezi")
+            </button>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="dashboard-alert" role="alert">
+            @errorMessage
+        </div>
+    }
+
+    <section class="dashboard-summary" aria-label="Povzetek naprav">
+        <div class="dashboard-summary-card">
+            <span class="dashboard-summary-label">Naprave</span>
+            <strong>@deviceRows.Count</strong>
+        </div>
+        <div class="dashboard-summary-card">
+            <span class="dashboard-summary-label">Aktivne naprave</span>
+            <strong>@activeDeviceCount</strong>
+        </div>
+        <div class="dashboard-summary-card">
+            <span class="dashboard-summary-label">Zajete meritve</span>
+            <strong>@sensorHistory.Count</strong>
+        </div>
+        <div class="dashboard-summary-card">
+            <span class="dashboard-summary-label">Zadnja posodobitev</span>
+            <strong>@lastUpdatedLabel</strong>
+        </div>
+    </section>
+
+    <section class="dashboard-panel">
+        <div class="dashboard-panel-header">
+            <div>
+                <h2>Vse naprave</h2>
+                <p>Stanje naprav, zadnja meritev in stevilo lokalno zajetih vzorcev.</p>
+            </div>
+            <span class="dashboard-count">@DeviceCountLabel</span>
+        </div>
+
+        @if (isLoading && !deviceRows.Any())
+        {
+            <div class="dashboard-empty">Nalagam dashboard podatke...</div>
+        }
+        else
+        {
+            <div class="dashboard-device-grid">
+                @foreach (var device in deviceRows)
+                {
+                    <article class="dashboard-device-card">
+                        <div class="dashboard-device-card-header">
+                            <div>
+                                <h3>@device.Name</h3>
+                                <span>@device.Type</span>
+                            </div>
+                            <span class="@GetStatusClass(device.IsActive)">
+                                @(device.IsActive ? "Aktivna" : "Neaktivna")
+                            </span>
+                        </div>
+
+                        <dl class="dashboard-device-metrics">
+                            <div>
+                                <dt>Zadnja meritev</dt>
+                                <dd>@device.LastReading</dd>
+                            </div>
+                            <div>
+                                <dt>Cas meritve</dt>
+                                <dd>@device.LastUpdated</dd>
+                            </div>
+                            <div>
+                                <dt>Vzorcev</dt>
+                                <dd>@device.SampleCount</dd>
+                            </div>
+                        </dl>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="dashboard-panel">
+        <div class="dashboard-panel-header">
+            <div>
+                <h2>Zadnje meritve</h2>
+                <p>Kratek tok zadnjih zajetih podatkov iz vseh naprav.</p>
+            </div>
+        </div>
+
+        @if (!recentReadings.Any())
+        {
+            <div class="dashboard-empty">Meritve se bodo prikazale po prvem zajemu podatkov.</div>
+        }
+        else
+        {
+            <div class="dashboard-reading-list" aria-live="polite">
+                @foreach (var reading in recentReadings)
+                {
+                    <div class="dashboard-reading-row">
+                        <span class="dashboard-reading-kind">@GetSensorLabel(reading)</span>
+                        <span>@GetSensorDetails(reading)</span>
+                        <time>@FormatTimestamp(reading.Timestamp)</time>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private IReadOnlyList<SensorData> sensorHistory = Array.Empty<SensorData>();
+    private List<DeviceDashboardRow> deviceRows = [];
+    private IReadOnlyList<SensorData> recentReadings = Array.Empty<SensorData>();
+    private int activeDeviceCount;
+    private string lastUpdatedLabel = "Ni podatkov";
+    private string? errorMessage;
+
+    private string DeviceCountLabel => deviceRows.Count switch
+    {
+        1 => "1 naprava",
+        2 => "2 napravi",
+        _ => $"{deviceRows.Count} naprav"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        SensorService.SensorDataUpdated += HandleSensorDataUpdated;
+        await RefreshAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        SensorService.SensorDataUpdated -= HandleSensorDataUpdated;
+        await SensorService.StopAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            await SensorService.InitializeAsync();
+            await LoadSnapshotAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Dashboard podatkov ni bilo mogoce osveziti: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadSnapshotAsync()
+    {
+        sensorHistory = (await SensorDataRepository.GetAllAsync())
+            .OrderByDescending(item => item.Timestamp)
+            .ToArray();
+
+        BuildDashboardRows();
+    }
+
+    private void HandleSensorDataUpdated(object? sender, SensorDataUpdatedEventArgs eventArgs)
+    {
+        sensorHistory = eventArgs.Snapshot;
+        BuildDashboardRows();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void BuildDashboardRows()
+    {
+        var gpsReadings = sensorHistory.OfType<GPSData>().ToArray();
+        var accelerometerReadings = sensorHistory.OfType<AccelerometerData>().ToArray();
+        var latestGps = gpsReadings.FirstOrDefault();
+        var latestAccelerometer = accelerometerReadings.FirstOrDefault();
+
+        deviceRows =
+        [
+            new DeviceDashboardRow(
+                "GPS naprava",
+                "Lokacija",
+                SensorService.GPSSensor.IsActive,
+                latestGps is null ? "Ni podatkov" : $"{latestGps.Latitude:F4}, {latestGps.Longitude:F4}",
+                latestGps is null ? "Ni podatkov" : FormatTimestamp(latestGps.Timestamp),
+                gpsReadings.Length),
+            new DeviceDashboardRow(
+                "Merilnik pospeska",
+                "Gibanje",
+                SensorService.AccelerometerSensor.IsActive,
+                latestAccelerometer is null ? "Ni podatkov" : $"X {latestAccelerometer.X:F2}, Y {latestAccelerometer.Y:F2}, Z {latestAccelerometer.Z:F2}",
+                latestAccelerometer is null ? "Ni podatkov" : FormatTimestamp(latestAccelerometer.Timestamp),
+                accelerometerReadings.Length)
+        ];
+
+        activeDeviceCount = deviceRows.Count(device => device.IsActive);
+        recentReadings = sensorHistory.Take(6).ToArray();
+        lastUpdatedLabel = sensorHistory.FirstOrDefault() is { } latest
+            ? FormatTimestamp(latest.Timestamp)
+            : "Ni podatkov";
+    }
+
+    private static string GetSensorLabel(SensorData sensorData) => sensorData switch
+    {
+        GPSData => "GPS",
+        AccelerometerData => "Pospesek",
+        _ => sensorData.Kind.ToString()
+    };
+
+    private static string GetSensorDetails(SensorData sensorData) => sensorData switch
+    {
+        GPSData gpsData => $"{gpsData.Latitude:F4}, {gpsData.Longitude:F4}",
+        AccelerometerData accelerometerData => $"X {accelerometerData.X:F2}, Y {accelerometerData.Y:F2}, Z {accelerometerData.Z:F2}",
+        _ => "Neznana meritev"
+    };
+
+    private static string GetStatusClass(bool isActive) =>
+        isActive ? "dashboard-status dashboard-status--active" : "dashboard-status";
+
+    private static string FormatTimestamp(DateTime timestamp) =>
+        timestamp.ToLocalTime().ToString("dd. MM. yyyy HH:mm:ss");
+
+    private sealed record DeviceDashboardRow(
+        string Name,
+        string Type,
+        bool IsActive,
+        string LastReading,
+        string LastUpdated,
+        int SampleCount);
+}
