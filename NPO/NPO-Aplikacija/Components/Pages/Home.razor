@@ -53,7 +53,7 @@
                 <h2>Vse naprave</h2>
                 <p>Stanje naprav, zadnja meritev in stevilo lokalno zajetih vzorcev.</p>
             </div>
-            <span class="dashboard-count">@deviceRows.Count napravi</span>
+            <span class="dashboard-count">@DeviceCountLabel</span>
         </div>
 
         @if (isLoading && !deviceRows.Any())
@@ -110,7 +110,7 @@
         }
         else
         {
-            <div class="dashboard-reading-list">
+            <div class="dashboard-reading-list" aria-live="polite">
                 @foreach (var reading in recentReadings)
                 {
                     <div class="dashboard-reading-row">
@@ -132,6 +132,13 @@
     private int activeDeviceCount;
     private string lastUpdatedLabel = "Ni podatkov";
     private string? errorMessage;
+
+    private string DeviceCountLabel => deviceRows.Count switch
+    {
+        1 => "1 naprava",
+        2 => "2 napravi",
+        _ => $"{deviceRows.Count} naprav"
+    };
 
     protected override async Task OnInitializedAsync()
     {
