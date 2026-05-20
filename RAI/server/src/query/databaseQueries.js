@@ -1,4 +1,3 @@
-const { ObjectId } = require("mongodb");
 const { mongoose } = require("../db/mongo");
 const { assertReadableCollection } = require("./collections");
 const { buildDateRange, buildPagination, buildSort } = require("./queryParams");
@@ -14,6 +13,8 @@ function db() {
 }
 
 function objectIdFrom(value, fieldName = "id") {
+  const { ObjectId } = mongoose.Types;
+
   if (!ObjectId.isValid(value)) {
     const error = new Error(`${fieldName} must be a valid MongoDB ObjectId`);
     error.statusCode = 400;

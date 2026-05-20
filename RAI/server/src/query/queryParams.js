@@ -62,7 +62,12 @@ function buildDateRange(query, fromField = "from", toField = "to") {
 function buildSort(query, allowedFields, fallback) {
   const requestedField = query.sortBy;
   const field = allowedFields.includes(requestedField) ? requestedField : fallback.field;
-  const direction = query.sortDirection === "asc" ? 1 : fallback.direction;
+  const direction =
+    query.sortDirection === "asc"
+      ? 1
+      : query.sortDirection === "desc"
+        ? -1
+        : fallback.direction;
 
   return {
     [field]: direction,
