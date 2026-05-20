@@ -21,6 +21,13 @@
         </div>
     </section>
 
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="dashboard-alert" role="alert">
+            @errorMessage
+        </div>
+    }
+
     <section class="dashboard-summary" aria-label="Povzetek naprav">
         <div class="dashboard-summary-card">
             <span class="dashboard-summary-label">Naprave</span>
@@ -124,6 +131,7 @@
     private IReadOnlyList<SensorData> recentReadings = Array.Empty<SensorData>();
     private int activeDeviceCount;
     private string lastUpdatedLabel = "Ni podatkov";
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,9 +148,21 @@
     private async Task RefreshAsync()
     {
         isLoading = true;
-        await SensorService.InitializeAsync();
-        await LoadSnapshotAsync();
-        isLoading = false;
+        errorMessage = null;
+
+        try
+        {
+            await SensorService.InitializeAsync();
+            await LoadSnapshotAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Dashboard podatkov ni bilo mogoce osveziti: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
     private async Task LoadSnapshotAsync()
