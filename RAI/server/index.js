@@ -1,18 +1,12 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
 require("dotenv").config();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const { createApp } = require("./src/app");
+const { connectMongo, mongoose } = require("./src/db/mongo");
 
-// connect to MongoDB
-//   localhost: mongodb://localhost:27017/rai
+const app = createApp();
+const port = Number(process.env.PORT || 5000);
 
-mongoose.connect(process.env.MONGODB_URI);
-
-// generis REST endpoints
+// Generic endpoints stay for backward compatibility until specific query routes are added.
 app.get("/api/:collection", async (req, res) => {
   const docs = await mongoose.connection.db
     .collection(req.params.collection)
@@ -28,4 +22,15 @@ app.post("/api/:collection", async (req, res) => {
   res.json(result);
 });
 
-app.listen(5000, () => console.log("Server running on http://localhost:5000"));
+async function start() {
+  await connectMongo(process.env.MONGODB_URI);
+
+  app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+  });
+}
+
+start().catch((error) => {
+  console.error("Failed to start server", error);
+  process.exit(1);
+});
