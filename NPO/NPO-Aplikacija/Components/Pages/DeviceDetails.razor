@@ -1,0 +1,252 @@
+@page "/devices"
+@page "/devices/{SelectedKind}"
+@inject ISensorService SensorService
+@inject ISensorDataRepository SensorDataRepository
+@implements IAsyncDisposable
+
+<PageTitle>Pregled naprave</PageTitle>
+
+<div class="device-details-page">
+    <section class="device-details-header">
+        <div>
+            <p class="device-details-kicker">NPO naprave</p>
+            <h1>Pregled posamezne naprave</h1>
+            <p class="device-details-subtitle">Izberi napravo in preglej njeno stanje ter lokalno zajete meritve.</p>
+        </div>
+
+        <button class="btn btn-primary" @onclick="RefreshAsync" disabled="@isLoading">
+            @(isLoading ? "Osvezujem..." : "Osvezi meritve")
+        </button>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="device-details-alert" role="alert">
+            @errorMessage
+        </div>
+    }
+
+    <section class="device-selector" aria-label="Izbira naprave">
+        @foreach (var option in deviceOptions)
+        {
+            <a class="@GetOptionClass(option.Kind)" href="@GetDeviceUrl(option.Kind)">
+                <span>@option.Name</span>
+                <small>@option.Description</small>
+            </a>
+        }
+    </section>
+
+    <section class="device-overview-panel">
+        <div class="device-overview-header">
+            <div>
+                <h2>@selectedDevice.Name</h2>
+                <p>@selectedDevice.Description</p>
+            </div>
+            <span class="@GetStatusClass(selectedDevice.IsActive)">
+                @(selectedDevice.IsActive ? "Aktivna" : "Neaktivna")
+            </span>
+        </div>
+
+        <div class="device-metric-grid">
+            <div class="device-metric">
+                <span>Zadnja meritev</span>
+                <strong>@selectedDevice.LastReading</strong>
+            </div>
+            <div class="device-metric">
+                <span>Cas meritve</span>
+                <strong>@selectedDevice.LastUpdated</strong>
+            </div>
+            <div class="device-metric">
+                <span>Stevilo meritev</span>
+                <strong>@selectedMeasurements.Count</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="device-measurements-panel">
+        <div class="device-measurements-header">
+            <div>
+                <h2>Meritve naprave</h2>
+                <p>Prikazanih je zadnjih @selectedMeasurements.Count lokalnih meritev za izbrano napravo.</p>
+            </div>
+        </div>
+
+        @if (isLoading && !selectedMeasurements.Any())
+        {
+            <div class="device-details-empty">Nalagam meritve naprave...</div>
+        }
+        else if (!selectedMeasurements.Any())
+        {
+            <div class="device-details-empty">Za izbrano napravo se ni zajetih meritev.</div>
+        }
+        else
+        {
+            <div class="device-measurements-table-wrap">
+                <table class="table device-measurements-table">
+                    <thead>
+                        <tr>
+                            <th>Cas</th>
+                            @foreach (var column in measurementColumns)
+                            {
+                                <th>@column</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var measurement in selectedMeasurements)
+                        {
+                            <tr>
+                                <td>@FormatTimestamp(measurement.Timestamp)</td>
+                                @foreach (var value in GetMeasurementValues(measurement))
+                                {
+                                    <td>@value</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter]
+    public string? SelectedKind { get; set; }
+
+    private readonly IReadOnlyList<DeviceOption> deviceOptions =
+    [
+        new("gps", "GPS naprava", "Lokacija in casovni zapis meritev."),
+        new("accelerometer", "Merilnik pospeska", "Meritve gibanja po oseh X, Y in Z.")
+    ];
+
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string normalizedKind = "gps";
+    private DeviceDetail selectedDevice = DeviceDetail.Empty("GPS naprava", "Lokacija in casovni zapis meritev.");
+    private IReadOnlyList<SensorData> selectedMeasurements = Array.Empty<SensorData>();
+    private IReadOnlyList<string> measurementColumns = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        SensorService.SensorDataUpdated += HandleSensorDataUpdated;
+        await RefreshAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        normalizedKind = NormalizeKind(SelectedKind);
+        await LoadSnapshotAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        SensorService.SensorDataUpdated -= HandleSensorDataUpdated;
+        await SensorService.StopAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            await SensorService.InitializeAsync();
+            await LoadSnapshotAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Meritev ni bilo mogoce osveziti: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadSnapshotAsync()
+    {
+        var allMeasurements = (await SensorDataRepository.GetAllAsync())
+            .OrderByDescending(item => item.Timestamp)
+            .ToArray();
+
+        selectedMeasurements = normalizedKind == "accelerometer"
+            ? allMeasurements.OfType<AccelerometerData>().Cast<SensorData>().ToArray()
+            : allMeasurements.OfType<GPSData>().Cast<SensorData>().ToArray();
+
+        selectedDevice = BuildSelectedDevice();
+        measurementColumns = normalizedKind == "accelerometer"
+            ? ["X", "Y", "Z"]
+            : ["Latitude", "Longitude"];
+    }
+
+    private void HandleSensorDataUpdated(object? sender, SensorDataUpdatedEventArgs eventArgs)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            await LoadSnapshotAsync();
+            StateHasChanged();
+        });
+    }
+
+    private DeviceDetail BuildSelectedDevice()
+    {
+        var option = deviceOptions.First(item => item.Kind == normalizedKind);
+        var isActive = normalizedKind == "accelerometer"
+            ? SensorService.AccelerometerSensor.IsActive
+            : SensorService.GPSSensor.IsActive;
+
+        var latest = selectedMeasurements.FirstOrDefault();
+
+        return new DeviceDetail(
+            option.Name,
+            option.Description,
+            isActive,
+            latest is null ? "Ni podatkov" : GetMeasurementSummary(latest),
+            latest is null ? "Ni podatkov" : FormatTimestamp(latest.Timestamp));
+    }
+
+    private static string NormalizeKind(string? value) =>
+        string.Equals(value, "accelerometer", StringComparison.OrdinalIgnoreCase)
+            ? "accelerometer"
+            : "gps";
+
+    private string GetOptionClass(string kind) =>
+        kind == normalizedKind ? "device-option device-option--selected" : "device-option";
+
+    private static string GetDeviceUrl(string kind) => $"/devices/{kind}";
+
+    private static string GetStatusClass(bool isActive) =>
+        isActive ? "device-status device-status--active" : "device-status";
+
+    private static string GetMeasurementSummary(SensorData sensorData) => sensorData switch
+    {
+        GPSData gpsData => $"{gpsData.Latitude:F4}, {gpsData.Longitude:F4}",
+        AccelerometerData accelerometerData => $"X {accelerometerData.X:F2}, Y {accelerometerData.Y:F2}, Z {accelerometerData.Z:F2}",
+        _ => "Neznana meritev"
+    };
+
+    private static IReadOnlyList<string> GetMeasurementValues(SensorData sensorData) => sensorData switch
+    {
+        GPSData gpsData => [$"{gpsData.Latitude:F6}", $"{gpsData.Longitude:F6}"],
+        AccelerometerData accelerometerData => [$"{accelerometerData.X:F3}", $"{accelerometerData.Y:F3}", $"{accelerometerData.Z:F3}"],
+        _ => []
+    };
+
+    private static string FormatTimestamp(DateTime timestamp) =>
+        timestamp.ToLocalTime().ToString("dd. MM. yyyy HH:mm:ss");
+
+    private sealed record DeviceOption(string Kind, string Name, string Description);
+
+    private sealed record DeviceDetail(
+        string Name,
+        string Description,
+        bool IsActive,
+        string LastReading,
+        string LastUpdated)
+    {
+        public static DeviceDetail Empty(string name, string description) =>
+            new(name, description, false, "Ni podatkov", "Ni podatkov");
+    }
+}
