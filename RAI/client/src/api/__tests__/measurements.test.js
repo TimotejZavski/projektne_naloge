@@ -11,7 +11,12 @@ jest.mock('../client', () => {
 });
 
 import { apiRequest } from '../client';
-import { listMeasurements, listMeasurementsForDevice } from '../measurements';
+import {
+  fetchLatestMeasurements,
+  fetchLatestMeasurementsForDevice,
+  listMeasurements,
+  listMeasurementsForDevice,
+} from '../measurements';
 
 beforeEach(() => {
   apiRequest.mockReset();
@@ -37,5 +42,31 @@ describe('listMeasurementsForDevice', () => {
   it('zavrne brez deviceId', async () => {
     await expect(listMeasurementsForDevice('')).rejects.toBeInstanceOf(TypeError);
     expect(apiRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe('SCRUM-30 realtime measurement helpers', () => {
+  it('fetchLatestMeasurements nastavi polling-friendly defaults', async () => {
+    apiRequest.mockResolvedValueOnce({ measurements: [] });
+    await fetchLatestMeasurements({ sensorType: 'gps' });
+
+    expect(apiRequest.mock.calls[0]).toEqual([
+      '/api/measurements',
+      {
+        query: { limit: 20, sort: 'desc', sensorType: 'gps' },
+        signal: undefined,
+      },
+    ]);
+  });
+
+  it('fetchLatestMeasurementsForDevice vsadi deviceId', async () => {
+    apiRequest.mockResolvedValueOnce({ measurements: [] });
+    await fetchLatestMeasurementsForDevice('phone-1', { limit: 5 });
+
+    expect(apiRequest.mock.calls[0][1].query).toEqual({
+      limit: 5,
+      sort: 'desc',
+      deviceId: 'phone-1',
+    });
   });
 });

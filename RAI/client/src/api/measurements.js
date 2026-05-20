@@ -32,3 +32,30 @@ export function listMeasurementsForDevice(deviceId, query = {}, { signal } = {})
   }
   return listMeasurements({ ...query, deviceId }, { signal });
 }
+
+/**
+ * SCRUM-30: polling-friendly fetch zadnjih meritev.
+ *
+ * Namenoma je samo tanka ovojnica nad obstojecim read endpointom:
+ * SCRUM-30 ne uvaja novega dashboard UI-ja in ne spreminja backend pogodb.
+ */
+export function fetchLatestMeasurements(query = {}, { signal } = {}) {
+  return listMeasurements(
+    {
+      limit: 20,
+      sort: 'desc',
+      ...query,
+    },
+    { signal }
+  );
+}
+
+/**
+ * Convenience za real-time pogled posamezne naprave po user-facing deviceId.
+ */
+export function fetchLatestMeasurementsForDevice(deviceId, query = {}, { signal } = {}) {
+  if (!deviceId || typeof deviceId !== 'string') {
+    return Promise.reject(new TypeError('fetchLatestMeasurementsForDevice: deviceId je obvezen.'));
+  }
+  return fetchLatestMeasurements({ ...query, deviceId }, { signal });
+}
