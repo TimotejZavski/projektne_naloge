@@ -97,6 +97,20 @@ Topic format:
 smart-playgrounds/devices/{deviceId}/sensors/{sensorType}
 ```
 
+## SCRUM-27 Dashboard view
+
+NPO aplikacija ima dashboard na zacetni poti `/` in dodatni poti `/dashboard`.
+Dashboard prikazuje:
+
+- vse trenutno podprte senzorske naprave,
+- aktivno ali neaktivno stanje naprave,
+- zadnjo zajeto meritev za vsako napravo,
+- skupno stevilo lokalno zajetih meritev,
+- kratek seznam zadnjih meritev iz lokalnega repository-ja.
+
+Podatki se berejo iz obstojecih `ISensorService` in `ISensorDataRepository`
+storitev, zato dashboard ne uvaja novega vzporednega vira podatkov.
+
 ## SCRUM-28 Pregled posameznih naprav in meritev
 
 NPO aplikacija ima stran za pregled posamezne naprave na poti `/devices`.

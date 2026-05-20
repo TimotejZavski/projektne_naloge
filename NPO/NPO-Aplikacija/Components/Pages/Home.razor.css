@@ -1,0 +1,267 @@
+.dashboard-page {
+    display: grid;
+    gap: 1rem;
+    color: #172033;
+}
+
+.dashboard-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1px solid #d9e2ef;
+    border-radius: 0.5rem;
+    background: #f8fafc;
+}
+
+.dashboard-kicker {
+    margin: 0 0 0.25rem;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 2rem;
+    font-weight: 750;
+}
+
+.dashboard-subtitle {
+    margin: 0.35rem 0 0;
+    color: #475569;
+}
+
+.dashboard-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.5rem;
+}
+
+.dashboard-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.dashboard-alert {
+    padding: 0.85rem 1rem;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+    color: #7f1d1d;
+    background: #fef2f2;
+    font-weight: 650;
+}
+
+.dashboard-summary-card,
+.dashboard-panel,
+.dashboard-device-card {
+    border: 1px solid #d9e2ef;
+    border-radius: 0.5rem;
+    background: #ffffff;
+}
+
+.dashboard-summary-card {
+    display: grid;
+    gap: 0.3rem;
+    min-height: 5.5rem;
+    padding: 1rem;
+}
+
+.dashboard-summary-label {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.dashboard-summary-card strong {
+    color: #0f172a;
+    font-size: 1.55rem;
+    line-height: 1.1;
+}
+
+.dashboard-panel {
+    padding: 1rem;
+}
+
+.dashboard-panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-panel-header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.15rem;
+    font-weight: 750;
+}
+
+.dashboard-panel-header p {
+    margin: 0.25rem 0 0;
+    color: #64748b;
+}
+
+.dashboard-count {
+    flex: 0 0 auto;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    color: #1e40af;
+    background: #dbeafe;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.dashboard-device-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.dashboard-device-card {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.dashboard-device-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.dashboard-device-card h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.dashboard-device-card-header span {
+    color: #64748b;
+    font-size: 0.88rem;
+}
+
+.dashboard-status {
+    flex: 0 0 auto;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    color: #7f1d1d;
+    background: #fee2e2;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.dashboard-status--active {
+    color: #14532d;
+    background: #dcfce7;
+}
+
+.dashboard-device-metrics {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.dashboard-device-metrics div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.dashboard-device-metrics dt {
+    color: #64748b;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.dashboard-device-metrics dd {
+    margin: 0;
+    color: #172033;
+    font-weight: 650;
+    word-break: break-word;
+}
+
+.dashboard-reading-list {
+    display: grid;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.dashboard-reading-row {
+    display: grid;
+    grid-template-columns: minmax(6rem, 0.6fr) minmax(0, 1.4fr) minmax(10rem, 0.8fr);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.dashboard-reading-row:last-child {
+    border-bottom: 0;
+}
+
+.dashboard-reading-kind {
+    color: #1e40af;
+    font-weight: 750;
+}
+
+.dashboard-reading-row time {
+    color: #64748b;
+    text-align: right;
+}
+
+.dashboard-empty {
+    padding: 1rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 0.5rem;
+    color: #64748b;
+    background: #f8fafc;
+}
+
+@media (max-width: 991.98px) {
+    .dashboard-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-device-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .dashboard-header,
+    .dashboard-panel-header,
+    .dashboard-device-card-header {
+        flex-direction: column;
+    }
+
+    .dashboard-actions,
+    .dashboard-actions .btn {
+        width: 100%;
+    }
+
+    .dashboard-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-reading-row {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-reading-row time {
+        text-align: left;
+    }
+}
