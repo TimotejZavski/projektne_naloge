@@ -102,3 +102,42 @@ zapisov.
 - Spremenjene metrike (`vehicleCount`, `averageSpeedKmh`) **se posodobijo**
   v obstojecem dokumentu (`modifiedCount > 0`).
 - Nikoli ne brisemo zapisov - zgodovino ohranjamo.
+
+## Posiljanje scraper outputa v API (SCRUM-35)
+
+Ce scraper tece kot locen proces, naj ne pise direktno v MongoDB. Najprej
+ekstrahira normalizirane zapise, nato jih poslje na API endpoint:
+
+```js
+const { ScraperOutputApiClient } = require('./src/scraper');
+
+const client = new ScraperOutputApiClient({
+  apiBaseUrl: 'http://localhost:5000',
+  accessToken: '<JWT access token>',
+});
+
+await client.send(records, {
+  metadata: { source: 'traffic-counter-scraper' },
+});
+```
+
+Endpoint `POST /api/scraper/output` sprejme:
+
+```json
+{
+  "records": [
+    {
+      "sourceId": "dars-traffic-counters-sample",
+      "stationId": "LJ-001",
+      "stationName": "Ljubljana center",
+      "location": { "latitude": 46.0569, "longitude": 14.5058 },
+      "metrics": { "vehicleCount": 1000, "averageSpeedKmh": 40 },
+      "measuredAt": "2026-05-15T09:55:00.000Z",
+      "extractedAt": "2026-05-15T10:00:00.000Z"
+    }
+  ],
+  "metadata": { "source": "traffic-counter-scraper" }
+}
+```
+
+API vrne `202 Accepted` s summaryjem obstojecega ingestion pipeline-a.
