@@ -145,6 +145,98 @@ describe('POST /api/scraper/run', () => {
   });
 });
 
+describe('POST /api/scraper/output', () => {
+  it('401 brez tokena', async () => {
+    const res = await request(app)
+      .post('/api/scraper/output')
+      .send({ records: [fixtureRecord()] });
+    expect(res.status).toBe(401);
+  });
+
+  it('202 sprejme ze ekstrahiran scraper output in ga shrani', async () => {
+    const { token } = await registerAndLogin();
+    const res = await request(app)
+      .post('/api/scraper/output')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        records: [
+          fixtureRecord({ stationId: 'OUT-1' }),
+          fixtureRecord({
+            stationId: 'OUT-2',
+            location: { latitude: 46.5547, longitude: 15.6459 },
+          }),
+        ],
+      });
+
+    expect(res.status).toBe(202);
+    expect(res.body.summary.insertedCount).toBe(2);
+    expect(res.body.metadata.receivedCount).toBe(2);
+    expect(await TrafficCounterMeasurement.countDocuments()).toBe(2);
+  });
+
+  it('idempotentnost: isti output drugic ne podvoji zapisov', async () => {
+    const { token } = await registerAndLogin();
+    const body = { records: [fixtureRecord({ stationId: 'OUT-1' })] };
+
+    await request(app)
+      .post('/api/scraper/output')
+      .set('Authorization', `Bearer ${token}`)
+      .send(body);
+    const second = await request(app)
+      .post('/api/scraper/output')
+      .set('Authorization', `Bearer ${token}`)
+      .send(body);
+
+    expect(second.status).toBe(202);
+    expect(second.body.summary.insertedCount).toBe(0);
+    expect(second.body.summary.matchedCount).toBe(1);
+    expect(await TrafficCounterMeasurement.countDocuments()).toBe(1);
+  });
+
+  it('neveljavni posamicni zapisi se vrnejo kot skipped, ne zrusijo batcha', async () => {
+    const { token } = await registerAndLogin();
+    const res = await request(app)
+      .post('/api/scraper/output')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        records: [
+          fixtureRecord({ sourceId: undefined }),
+          fixtureRecord({ stationId: 'OUT-OK' }),
+        ],
+      });
+
+    expect(res.status).toBe(202);
+    expect(res.body.summary.insertedCount).toBe(1);
+    expect(res.body.summary.skippedCount).toBe(1);
+    expect(res.body.summary.skipped[0].reason).toBe('missing_sourceId');
+  });
+
+  it('400 za manjkajoc records array', async () => {
+    const { token } = await registerAndLogin();
+    const res = await request(app)
+      .post('/api/scraper/output')
+      .set('Authorization', `Bearer ${token}`)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('NODE_ENV=production: output endpoint zahteva admin role', async () => {
+    const orig = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      const { token } = await registerAndLogin();
+      const res = await request(app)
+        .post('/api/scraper/output')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ records: [fixtureRecord()] });
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
+    } finally {
+      process.env.NODE_ENV = orig;
+    }
+  });
+});
+
 describe('GET /api/scraper/measurements', () => {
   it('401 brez tokena', async () => {
     const res = await request(app).get('/api/scraper/measurements');

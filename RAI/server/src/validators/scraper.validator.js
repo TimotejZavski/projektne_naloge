@@ -17,6 +17,14 @@ const runScraperSchema = Joi.object({
   sourceIds: Joi.array().items(Joi.string().pattern(SOURCE_ID_PATTERN)).min(1).max(20),
 });
 
+const scraperOutputSchema = Joi.object({
+  records: Joi.array().items(Joi.object().unknown(true)).min(1).max(1000).required(),
+  metadata: Joi.object({
+    source: Joi.string().max(100),
+    sentAt: Joi.date().iso(),
+  }).unknown(true),
+});
+
 const listTrafficMeasurementsQuerySchema = Joi.object({
   sourceId: Joi.string().pattern(SOURCE_ID_PATTERN),
   stationId: Joi.string().pattern(STATION_ID_PATTERN),
@@ -29,5 +37,6 @@ const listTrafficMeasurementsQuerySchema = Joi.object({
 
 module.exports = {
   runScraperSchema,
+  scraperOutputSchema,
   listTrafficMeasurementsQuerySchema,
 };
