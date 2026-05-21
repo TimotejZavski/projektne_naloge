@@ -54,6 +54,7 @@ endpoint-e za branje stanovanih meritev.
 | Metoda | Pot | Opis |
 | --- | --- | --- |
 | `POST` | `/api/scraper/run` | Sprozi pipeline za vse vire ali podan podseznam (`{ sourceIds: ["..."] }`). V `NODE_ENV=production` samo admin role. |
+| `POST` | `/api/scraper/output` | Sprejme ze ekstrahiran scraper output (`{ records: [...] }`) in ga poslje v DB ingestion pipeline. V `NODE_ENV=production` samo admin role. |
 | `GET`  | `/api/scraper/measurements` | Bere shranjene meritve s filtri `sourceId`, `stationId`, `from`, `to`, `limit` (default 100, max 1000). |
 | `GET`  | `/api/scraper/stations` | Distinct postaje z zadnjo meritvijo (za select v UI / popup na zemljevidu). |
 

@@ -11,6 +11,7 @@ const validate = require('../middleware/validate');
 const { requireAuth } = require('../middleware/auth');
 const {
   runScraperSchema,
+  scraperOutputSchema,
   listTrafficMeasurementsQuerySchema,
 } = require('../validators/scraper.validator');
 const ctrl = require('../controllers/scraper.controller');
@@ -20,6 +21,7 @@ const router = express.Router();
 router.use(requireAuth);
 
 router.post('/run', validate(runScraperSchema), ctrl.runPipeline);
+router.post('/output', validate(scraperOutputSchema), ctrl.ingestOutput);
 router.get(
   '/measurements',
   validate(listTrafficMeasurementsQuerySchema, 'query'),

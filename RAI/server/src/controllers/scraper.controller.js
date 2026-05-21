@@ -63,6 +63,29 @@ const runPipeline = asyncHandler(async (req, res) => {
 });
 
 // ============================================================
+// POST /api/scraper/output
+// ============================================================
+// Sprejme ze ekstrahiran scraper output iz zunanjega/locenega scraper procesa.
+// SCRUM-35: ta endpoint je meja "scraper output -> API -> DB".
+const ingestOutput = asyncHandler(async (req, res) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction && !isAdmin(req)) {
+    throw new AppError('Samo administratorji imajo dostop.', 403, 'FORBIDDEN');
+  }
+
+  const { records } = req.body;
+  const summary = await getService().ingestExtracted(records);
+
+  res.status(202).json({
+    summary,
+    metadata: {
+      acceptedAt: new Date().toISOString(),
+      receivedCount: Array.isArray(records) ? records.length : 0,
+    },
+  });
+});
+
+// ============================================================
 // GET /api/scraper/measurements
 // ============================================================
 const listMeasurements = asyncHandler(async (req, res) => {
@@ -126,6 +149,7 @@ const listStations = asyncHandler(async (req, res) => {
 
 module.exports = {
   runPipeline,
+  ingestOutput,
   listMeasurements,
   listStations,
   setServiceForTesting,
