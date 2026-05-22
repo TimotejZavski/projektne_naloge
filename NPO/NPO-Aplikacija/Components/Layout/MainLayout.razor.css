@@ -2,15 +2,72 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
+    background: #eef3f8;
 }
 
-main {
+.app-main {
     flex: 1;
+    min-width: 0;
 }
 
 .sidebar {
     /* Use a flatter, neutral sidebar background for better legibility */
     background-color: #0f1724;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 4.25rem;
+    padding: 1rem;
+    border-bottom: 1px solid #d9e2ef;
+    background: #ffffff;
+}
+
+.app-eyebrow {
+    display: block;
+    margin-bottom: 0.15rem;
+    color: #64748b;
+    font-size: 0.74rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-header h1 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.35rem;
+    font-weight: 750;
+}
+
+.app-header__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.app-header__meta span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    color: #1e40af;
+    background: #eff6ff;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.app-content {
+    width: min(100%, 1180px);
+    margin: 0 auto;
+    padding: 1rem;
 }
 
 .top-row {
@@ -38,6 +95,15 @@ main {
     }
 
 @media (max-width: 640.98px) {
+    .app-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .app-header__meta {
+        justify-content: flex-start;
+    }
+
     .top-row {
         justify-content: space-between;
     }
@@ -53,10 +119,11 @@ main {
     }
 
     .sidebar {
-        width: 250px;
+        width: 17rem;
         height: 100vh;
         position: sticky;
         top: 0;
+        flex: 0 0 17rem;
     }
 
     .top-row {
@@ -71,8 +138,12 @@ main {
         width: 0;
     }
 
-    .top-row, article {
+    .top-row {
         padding-left: 2rem !important;
         padding-right: 1.5rem !important;
+    }
+
+    .app-content {
+        padding: 1.25rem 1.5rem 2rem;
     }
 }
