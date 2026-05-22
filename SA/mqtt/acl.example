@@ -1,0 +1,23 @@
+# Mosquitto ACL primer za Smart Playgrounds
+# Naloga: SCRUM-36
+#
+# Kopiraj v /mosquitto/config/acl in prilagodi uporabniska imena.
+# Uporabniki se ustvarijo z mosquitto_passwd v datoteki passwd.
+
+user npo-publisher
+topic write devices/+/sensors/+
+topic write devices/+/status/+
+topic read system/broker/status
+
+user rai-consumer
+topic read devices/+/sensors/+
+topic read devices/+/status/#
+topic write analytics/#
+
+user monitoring
+topic read $SYS/#
+topic write system/broker/status
+
+user web-dashboard
+topic read analytics/#
+topic read system/broker/status
