@@ -123,6 +123,20 @@ Stran omogoca izbiro naprave, prikaz aktivnega stanja, zadnje meritve,
 casa zadnje meritve in tabelarni pregled lokalno zajetih meritev iz
 `ISensorDataRepository`.
 
+## SCRUM-39 Spletni vmesnik - osnovni layout
+
+NPO aplikacija uporablja skupni spletni layout v `MainLayout.razor`.
+Layout vsebuje:
+
+- levo navigacijo z locenima skupinama Pregledi in Sistem,
+- zgornji header z nazivom aplikacije in osnovnimi statusnimi oznakami,
+- centralni vsebinski prostor z omejeno sirino za dashboard in detail poglede,
+- globalne UI tokene za barve, povrsine, obrobe, gumbe in tabele,
+- odzivno prilagoditev za ozke zaslone.
+
+Novi NPO pogledi naj uporabljajo obstojeci `MainLayout` in naj svoje
+specificne stile omejijo na pripadajoce `.razor.css` datoteke.
+
 Primer GPS sporočila:
 
 ```json
