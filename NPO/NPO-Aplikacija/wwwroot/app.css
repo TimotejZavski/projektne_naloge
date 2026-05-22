@@ -1,27 +1,43 @@
-html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-}
-
 :root {
+    --app-bg: #eef3f8;
+    --app-surface: #ffffff;
+    --app-surface-muted: #f8fafc;
+    --app-border: #d9e2ef;
+    --app-text: #172033;
+    --app-text-strong: #0f172a;
+    --app-text-muted: #64748b;
+    --app-primary: #2563eb;
+    --app-primary-strong: #1d4ed8;
     --bs-secondary-color: #6c757d;
 }
 
+html, body {
+    min-height: 100%;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: var(--app-bg);
+}
+
 body {
-    color: #222222;
+    color: var(--app-text);
 }
 
 a, .btn-link {
-    color: #006bb7;
+    color: var(--app-primary);
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: var(--app-primary);
+    border-color: var(--app-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--app-primary-strong);
+    border-color: var(--app-primary-strong);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #93c5fd;
 }
 
 .content {
@@ -30,6 +46,16 @@ a, .btn-link {
 
 h1:focus {
     outline: none;
+}
+
+.table {
+    --bs-table-color: var(--app-text);
+    --bs-table-border-color: #e2e8f0;
+}
+
+.card {
+    border-color: var(--app-border);
+    border-radius: 0.5rem;
 }
 
 .valid.modified:not([type=checkbox]) {
