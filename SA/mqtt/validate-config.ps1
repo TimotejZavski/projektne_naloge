@@ -46,6 +46,6 @@ Assert-Contains $secureConfig "(?m)^acl_file\s+/mosquitto/config/acl\s*$" "Varno
 
 Assert-Contains $acl "user\s+npo-publisher" "ACL primer mora vsebovati NPO publisher uporabnika."
 Assert-Contains $acl "user\s+rai-consumer" "ACL primer mora vsebovati RAI consumer uporabnika."
-Assert-Contains $acl "topic\s+read\s+\$SYS/#" "ACL primer mora dovoliti monitoring branje SYS topicov."
+Assert-Contains $acl 'topic\s+read\s+\$SYS/#' "ACL primer mora dovoliti monitoring branje SYS topicov."
 
 Write-Host "Mosquitto konfiguracija je skladna s SCRUM-36 osnovnimi preverjanji."
