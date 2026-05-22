@@ -6,11 +6,17 @@ Ta mapa vsebuje vso potrebno konfiguracijo za zagon Mosquitto brokerja
 v lokalnem razvojnem okolju in pripravo na produkcijski zagon (SCRUM-37,
 SCRUM-38).
 
+SCRUM-36 pokriva konfiguracijo brokerja. Dejanski zagon containerja ostaja
+locena naloga SCRUM-37.
+
 ## Vsebina
 
 | Datoteka | Namen |
 |---|---|
 | [`mosquitto.conf`](./mosquitto.conf) | konfiguracija brokerja (listenerji, persistenca, logiranje) |
+| [`mosquitto.secure.example.conf`](./mosquitto.secure.example.conf) | varnostni template brez anonimnega dostopa |
+| [`acl.example`](./acl.example) | primer ACL pravil za NPO, RAI, monitoring in dashboard |
+| [`validate-config.ps1`](./validate-config.ps1) | osnovno preverjanje skladnosti SCRUM-36 konfiguracije |
 | [`topics.md`](./topics.md) | zavezujoca topic struktura projekta |
 | [`docker-compose.yml`](./docker-compose.yml) | kontejnerizacija brokerja |
 
@@ -18,6 +24,41 @@ SCRUM-38).
 
 - Docker Desktop (Windows / macOS) **ali** Docker Engine (Linux)
 - prosti vrati 1883 (MQTT) in 9001 (WebSocket)
+
+## SCRUM-36 konfiguracijski profil
+
+Za lokalni razvoj se uporablja `mosquitto.conf`. Ta profil:
+
+- odpira MQTT listener na `1883`,
+- odpira WebSocket listener na `9001`,
+- omogoca anonimni dostop samo za razvojno testiranje,
+- vklopi persistenco sej in logiranje,
+- ne vsebuje gesel ali skrivnosti.
+
+Za varnostno pripravljeno okolje se uporabi
+`mosquitto.secure.example.conf` skupaj z `acl.example`. Pred uporabo ga
+kopiraj v Mosquitto config mapo in lokalno ustvari `passwd`:
+
+```bash
+mosquitto_passwd -c passwd npo-publisher
+mosquitto_passwd passwd rai-consumer
+mosquitto_passwd passwd monitoring
+mosquitto_passwd passwd web-dashboard
+```
+
+Datoteke `passwd` ne commitaj v repozitorij.
+
+## Preverjanje konfiguracije
+
+Iz mape `SA/mqtt`:
+
+```powershell
+.\validate-config.ps1
+```
+
+Skripta preveri, da razvojni config, varnostni template in ACL primer
+vsebujejo zahtevane listenerje, varnostne nastavitve in osnovne topic
+pravice.
 
 ## Zagon brokerja
 
