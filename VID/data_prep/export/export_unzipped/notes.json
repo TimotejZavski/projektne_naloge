@@ -1,0 +1,25 @@
+{
+  "categories": [
+    {
+      "id": 0,
+      "name": "Ball"
+    },
+    {
+      "id": 1,
+      "name": "Hoop"
+    },
+    {
+      "id": 2,
+      "name": "Player"
+    },
+    {
+      "id": 3,
+      "name": "Ref"
+    }
+  ],
+  "info": {
+    "year": 2026,
+    "version": "1.0",
+    "contributor": "Label Studio"
+  }
+}

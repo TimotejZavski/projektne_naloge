@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 5
+names: ['Ball', 'Court', 'Hoop', 'Player', 'Ref']
+
+roboflow:
+  workspace: basketball-court-yp3nn
+  project: basketball-court-ecb9s
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/basketball-court-yp3nn/basketball-court-ecb9s/dataset/1
