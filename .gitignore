@@ -36,5 +36,14 @@ obj/
 **/yarn.lock
 
 
-#vid
-VID/data
+# VID images
+VID/**/*.[jJ][pP][gG]
+VID/**/*.[jJ][pP][eE][gG]
+VID/**/*.[pP][nN][gG]
+VID/**/*.[gG][iI][fF]
+VID/**/*.[wW][eE][bB][pP]
+VID/**/*.[bB][mM][pP]
+VID/**/*.[tT][iI][fF]
+VID/**/*.[tT][iI][fF][fF]
+VID/**/*.[hH][eE][iI][cC]
+VID/**/*.[aA][vV][iI][fF]
