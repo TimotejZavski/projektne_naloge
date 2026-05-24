@@ -19,7 +19,7 @@ const TIME_PRESETS = [
 export default function DashboardPage({ onDeviceChange }) {
   const [deviceId, setDeviceId] = useState(null);
   const [sensorType, setSensorType] = useState("gps");
-  const [selectedPreset, setSelectedPreset] = useState(60);
+  const [selectedPreset, setSelectedPreset] = useState(1440); // default 24h
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);

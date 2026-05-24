@@ -1,5 +1,6 @@
 /**
  * GpsMap — interaktivni Leaflet/OSM zemljevid z GPS sledjo (SCRUM-41).
+ * Fetcha VSE GPS meritve za napravo (brez časovnega filtra).
  */
 
 import { useEffect, useState } from "react";
@@ -38,34 +39,18 @@ function fmtTime(iso) {
 export default function GpsMap({ deviceId }) {
   const [points, setPoints] = useState([]);
   const [error, setError] = useState(null);
-  const [debug, setDebug] = useState("");
 
   useEffect(() => {
-    console.log("[GpsMap] deviceId changed:", deviceId);
     if (!deviceId) {
       setPoints([]);
-      setDebug("no deviceId");
       return;
     }
     let c = false;
-    const to = new Date().toISOString();
-    const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    console.log("[GpsMap] fetching GPS for", deviceId, { from, to });
-
-    listMeasurements({
-      deviceId,
-      sensorType: "gps",
-      from,
-      to,
-      limit: 500,
-      sort: "asc",
-    })
+    // BREZ casovnega filtra - vzemi vse GPS meritve
+    listMeasurements({ deviceId, sensorType: "gps", limit: 1000, sort: "desc" })
       .then((d) => {
         if (c) return;
-        console.log("[GpsMap] raw response:", d);
-        const raw = d?.measurements || [];
-        console.log("[GpsMap] measurements count:", raw.length);
-        const pts = raw
+        const pts = (d?.measurements || [])
           .filter((m) => m.data?.latitude != null && m.data?.longitude != null)
           .map((m) => ({
             lat: m.data.latitude,
@@ -74,17 +59,11 @@ export default function GpsMap({ deviceId }) {
             ts: m.timestampUtc,
             id: m._id,
           }));
-        console.log("[GpsMap] filtered points:", pts.length, "first:", pts[0]);
         setPoints(pts);
         setError(null);
-        setDebug(`OK: ${pts.length} points`);
       })
       .catch((e) => {
-        if (!c) {
-          console.error("[GpsMap] fetch error:", e);
-          setError(e);
-          setDebug("ERROR: " + (e.message || String(e)));
-        }
+        if (!c) setError(e);
       });
     return () => {
       c = true;
@@ -100,23 +79,17 @@ export default function GpsMap({ deviceId }) {
         <div>
           <p className="eyebrow">GPS sled</p>
           <h2>{deviceId || "Izberi napravo"}</h2>
-          <p className="map-trace-info">
-            📍 {points.length} točk — {debug}
-          </p>
+          <p className="map-trace-info">📍 {points.length} točk</p>
         </div>
       </div>
 
       {error ? (
         <div className="map-placeholder">
-          <span>Napaka: {debug}</span>
+          <span>Napaka pri nalaganju</span>
         </div>
       ) : points.length === 0 ? (
         <div className="map-placeholder">
-          <span>
-            {deviceId
-              ? "Ni GPS podatkov za to napravo"
-              : "Izberi napravo za prikaz GPS sledi"}
-          </span>
+          <span>{deviceId ? "Ni GPS podatkov" : "Izberi napravo"}</span>
         </div>
       ) : (
         <div className="map-wrapper">
@@ -129,7 +102,7 @@ export default function GpsMap({ deviceId }) {
             scrollWheelZoom={true}
           >
             <TileLayer
-              attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://osm.org/copyright">OSM</a>'
+              attribution='&copy; <a href="https://carto.com/">CARTO</a>'
               url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
             />
             {positions.length >= 2 && (
