@@ -11,9 +11,9 @@
  *   - data:    dropdown s seznamom
  */
 
-import { useEffect, useState } from 'react';
-import { listDevices } from '../../api/devices';
-import { useAuth } from '../../context/AuthContext';
+import { useEffect, useState } from "react";
+import { listDevices } from "../../api/devices";
+import { useAuth } from "../../context/AuthContext";
 
 export default function DeviceSelector({ selectedDeviceId, onChange }) {
   const { status: authStatus } = useAuth();
@@ -22,7 +22,7 @@ export default function DeviceSelector({ selectedDeviceId, onChange }) {
   const [error, setError] = useState(null);
 
   const fetchDevices = async () => {
-    if (authStatus !== 'authed') return;
+    if (authStatus !== "authed") return;
     setIsLoading(true);
     setError(null);
     try {
@@ -41,8 +41,7 @@ export default function DeviceSelector({ selectedDeviceId, onChange }) {
 
   useEffect(() => {
     fetchDevices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authStatus]);
+  }, [authStatus]); // eslint-disable-line
 
   const handleChange = (e) => {
     const id = e.target.value;
@@ -50,7 +49,7 @@ export default function DeviceSelector({ selectedDeviceId, onChange }) {
     if (onChange) onChange(id, device);
   };
 
-  if (authStatus !== 'authed') {
+  if (authStatus !== "authed") {
     return (
       <div className="selector-card">
         <span className="status-label">Naprava</span>
@@ -65,16 +64,18 @@ export default function DeviceSelector({ selectedDeviceId, onChange }) {
         <span className="status-label">Naprava</span>
         <select
           className="selector-dropdown"
-          value={selectedDeviceId || ''}
+          value={selectedDeviceId || ""}
           onChange={handleChange}
           disabled={isLoading || devices.length === 0}
         >
           {isLoading && <option value="">Nalagam naprave…</option>}
-          {!isLoading && devices.length === 0 && !error && <option value="">Ni naprav</option>}
+          {!isLoading && devices.length === 0 && !error && (
+            <option value="">Ni naprav</option>
+          )}
           {!isLoading &&
             devices.map((d) => (
               <option key={d.deviceId} value={d.deviceId}>
-                {d.name || d.deviceId} ({d.platform || '?'})
+                {d.name || d.deviceId} ({d.platform || "?"})
               </option>
             ))}
         </select>
@@ -82,7 +83,7 @@ export default function DeviceSelector({ selectedDeviceId, onChange }) {
 
       {error && !isLoading && (
         <p className="error-banner">
-          Naprav ni bilo mogoče naložiti.{' '}
+          Naprav ni bilo mogoče naložiti.{" "}
           <button type="button" className="ghost-button" onClick={fetchDevices}>
             Poskusi znova
           </button>
@@ -91,7 +92,8 @@ export default function DeviceSelector({ selectedDeviceId, onChange }) {
 
       {!isLoading && !error && devices.length === 0 && (
         <p className="hint">
-          Ni najdenih naprav. Registriraj napravo prek <code>POST /api/devices</code>.
+          Ni najdenih naprav. Registriraj napravo prek{" "}
+          <code>POST /api/devices</code>.
         </p>
       )}
     </div>
