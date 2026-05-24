@@ -16,7 +16,7 @@ const TIME_PRESETS = [
   { label: "24 ur", minutes: 1440 },
 ];
 
-export default function DashboardPage({ onGpsTraceChange }) {
+export default function DashboardPage({ onDeviceChange }) {
   const [deviceId, setDeviceId] = useState(null);
   const [sensorType, setSensorType] = useState("gps");
   const [selectedPreset, setSelectedPreset] = useState(60);
@@ -67,18 +67,10 @@ export default function DashboardPage({ onGpsTraceChange }) {
 
   const measurements = useMemo(() => (data && data.measurements) || [], [data]);
 
-  // GPS trace callback to App.js
+  // Notify parent of device changes (for map)
   useEffect(() => {
-    if (!onGpsTraceChange) return;
-    if (sensorType !== "gps" || measurements.length < 2) {
-      onGpsTraceChange(null);
-      return;
-    }
-    const trace = measurements
-      .filter((m) => m.data?.latitude != null && m.data?.longitude != null)
-      .map((m) => ({ lat: m.data.latitude, lng: m.data.longitude }));
-    onGpsTraceChange(trace.length >= 2 ? trace : null);
-  }, [measurements, sensorType, onGpsTraceChange]);
+    if (onDeviceChange) onDeviceChange(deviceId);
+  }, [deviceId, onDeviceChange]);
 
   return (
     <section className="dashboard-page">

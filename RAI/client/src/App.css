@@ -626,6 +626,11 @@ h2 {
 
 /* Mapbox trace info */
 
+.map-section {
+    margin: 0 auto 28px;
+    max-width: 1180px;
+}
+
 .map-trace-info {
     color: #1976d2;
     font-size: 13px;
@@ -664,6 +669,16 @@ h2 {
 .chart-wrapper {
     height: 380px;
     position: relative;
+    width: 100%;
+}
+
+.map-wrapper {
+    height: 380px;
+    width: 100%;
+}
+
+.leaflet-map {
+    height: 100%;
     width: 100%;
 }
 
