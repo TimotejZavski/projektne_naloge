@@ -100,7 +100,7 @@ module.exports = {
     process.env.RATE_LIMIT_REGISTER_WINDOW_MS,
     60 * 60 * 1000,
   ),
-  RATE_LIMIT_GENERAL_MAX: toInt(process.env.RATE_LIMIT_GENERAL_MAX, 100),
+  RATE_LIMIT_GENERAL_MAX: toInt(process.env.RATE_LIMIT_GENERAL_MAX, 1000),
   RATE_LIMIT_GENERAL_WINDOW_MS: toInt(
     process.env.RATE_LIMIT_GENERAL_WINDOW_MS,
     15 * 60 * 1000,
