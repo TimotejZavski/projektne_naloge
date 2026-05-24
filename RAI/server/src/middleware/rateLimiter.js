@@ -9,14 +9,14 @@
  * Vsi vrnejo enotno strukturirano JSON napako.
  */
 
-const rateLimit = require('express-rate-limit');
-const env = require('../config/env');
+const rateLimit = require("express-rate-limit");
+const env = require("../config/env");
 
 function jsonHandler(req, res /* , next, options */) {
   res.status(429).json({
     error: {
-      code: 'TOO_MANY_REQUESTS',
-      message: 'Prevec zahtev. Poskusite znova kasneje.',
+      code: "TOO_MANY_REQUESTS",
+      message: "Prevec zahtev. Poskusite znova kasneje.",
     },
   });
 }
@@ -26,6 +26,7 @@ const generalLimiter = rateLimit({
   max: env.RATE_LIMIT_GENERAL_MAX,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => env.NODE_ENV === "development",
   handler: jsonHandler,
 });
 
