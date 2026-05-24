@@ -1,20 +1,10 @@
 /**
  * DashboardPage — glavni pogled z grafično vizualizacijo (SCRUM-41).
- *
- * Združuje:
- *   - DeviceSelector (izbira naprave)
- *   - SensorTypeToggle (GPS / pospeškometer)
- *   - Časovni filtri (15min / 1h / 6h / 24h)
- *   - TimeSeriesChart (Chart.js grafikon)
- *
- * GPS sled se pošilja navzgor prek `onGpsTraceChange` callback-a,
- * da jo App.js prikaže v obstoječem Mapbox panelu.
+ * Uporablja preprost setInterval za polling, brez kompleksnih hook-ov.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { listMeasurements } from "../../api/measurements";
-import { useRealtimeRefresh } from "../../hooks/useRealtimeRefresh";
 import DeviceSelector from "./DeviceSelector";
 import SensorTypeToggle from "./SensorTypeToggle";
 import TimeSeriesChart from "./TimeSeriesChart";
@@ -30,9 +20,10 @@ export default function DashboardPage({ onGpsTraceChange }) {
   const [deviceId, setDeviceId] = useState(null);
   const [sensorType, setSensorType] = useState("gps");
   const [selectedPreset, setSelectedPreset] = useState(60);
-
-  // ref za sledenje spremembam brez re-render race
-  const fetchKeyRef = useRef(0);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [lastFetch, setLastFetch] = useState(0);
 
   const timeRange = useMemo(() => {
     const to = new Date();
@@ -40,74 +31,60 @@ export default function DashboardPage({ onGpsTraceChange }) {
     return { from: from.toISOString(), to: to.toISOString() };
   }, [selectedPreset]);
 
-  const fetcher = useCallback(
-    async (signal) => {
-      if (!deviceId) return { measurements: [] };
-      return listMeasurements(
-        {
-          deviceId,
-          sensorType,
-          from: timeRange.from,
-          to: timeRange.to,
-          limit: 1000,
-          sort: "asc",
-        },
-        { signal },
-      );
-    },
-    [deviceId, sensorType, timeRange.from, timeRange.to],
-  );
-
-  const { data, error, isRefreshing, refresh, start, stop } =
-    useRealtimeRefresh(fetcher, {
-      enabled: false,
-      intervalMs: 10000,
-      immediate: false,
-    });
-
-  // ⚡ BUGFIX: ob spremembi deviceId/sensorType/preset takoj poberi na novo
-  useEffect(() => {
-    if (!deviceId) {
-      stop();
-      return;
+  const fetchData = useCallback(async () => {
+    if (!deviceId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await listMeasurements({
+        deviceId,
+        sensorType,
+        from: timeRange.from,
+        to: timeRange.to,
+        limit: 1000,
+        sort: "asc",
+      });
+      setData(result);
+      setLastFetch(Date.now());
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
     }
-    fetchKeyRef.current += 1;
-    refresh().then(() => {
-      start();
-    });
-    // eslint-disable-next-line
-  }, [deviceId, sensorType, selectedPreset, fetchKeyRef.current]);
+  }, [deviceId, sensorType, timeRange.from, timeRange.to]);
+
+  // Fetch when deviceId/sensorType/preset changes
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Poll every 15s
+  useEffect(() => {
+    if (!deviceId) return;
+    const id = setInterval(fetchData, 15000);
+    return () => clearInterval(id);
+  }, [fetchData, deviceId]);
 
   const measurements = useMemo(() => (data && data.measurements) || [], [data]);
 
-  // Poslji GPS sled navzgor v App.js za Mapbox prikaz
+  // GPS trace callback to App.js
   useEffect(() => {
     if (!onGpsTraceChange) return;
-    if (sensorType !== "gps" || measurements.length === 0) {
+    if (sensorType !== "gps" || measurements.length < 2) {
       onGpsTraceChange(null);
       return;
     }
     const trace = measurements
-      .filter(
-        (m) => m.data && m.data.latitude != null && m.data.longitude != null,
-      )
+      .filter((m) => m.data?.latitude != null && m.data?.longitude != null)
       .map((m) => ({ lat: m.data.latitude, lng: m.data.longitude }));
     onGpsTraceChange(trace.length >= 2 ? trace : null);
   }, [measurements, sensorType, onGpsTraceChange]);
 
-  const handleDeviceChange = useCallback((id) => setDeviceId(id), []);
-  const handleSensorChange = useCallback((type) => setSensorType(type), []);
-  const handleRetry = useCallback(() => refresh(), [refresh]);
-
   return (
-    <section className="dashboard-page" aria-labelledby="dashboard-heading">
+    <section className="dashboard-page">
       <div className="dashboard-controls">
-        <DeviceSelector
-          selectedDeviceId={deviceId}
-          onChange={handleDeviceChange}
-        />
-        <SensorTypeToggle selected={sensorType} onChange={handleSensorChange} />
-
+        <DeviceSelector selectedDeviceId={deviceId} onChange={setDeviceId} />
+        <SensorTypeToggle selected={sensorType} onChange={setSensorType} />
         <div className="time-presets">
           <span className="status-label">Obdobje</span>
           <div className="time-presets__buttons">
@@ -123,21 +100,15 @@ export default function DashboardPage({ onGpsTraceChange }) {
             ))}
           </div>
         </div>
-
         {deviceId && (
-          <div className="refresh-indicator">
-            <span
-              className={`refresh-dot ${isRefreshing ? "refresh-dot--active" : ""}`}
-            />
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={handleRetry}
-              disabled={isRefreshing}
-            >
-              Osveži
-            </button>
-          </div>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={fetchData}
+            style={{ marginLeft: "auto" }}
+          >
+            Osveži
+          </button>
         )}
       </div>
 
@@ -149,9 +120,9 @@ export default function DashboardPage({ onGpsTraceChange }) {
         <TimeSeriesChart
           measurements={measurements}
           sensorType={sensorType}
-          isLoading={!data && !error}
+          isLoading={loading && !data}
           error={error}
-          onRetry={handleRetry}
+          onRetry={fetchData}
         />
       )}
     </section>

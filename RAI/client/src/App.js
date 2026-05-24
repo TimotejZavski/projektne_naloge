@@ -20,7 +20,6 @@ function encodePolyline(points) {
 function App() {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN;
   const [gpsTrace, setGpsTrace] = useState(null);
-  const [sensorType, setSensorType] = useState("gps");
 
   const handleGpsTraceChange = useCallback((trace) => {
     setGpsTrace(trace);
