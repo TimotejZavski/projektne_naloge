@@ -19,25 +19,35 @@ import {
   Tooltip,
   Legend,
   Filler,
-} from 'chart.js';
-import 'chartjs-adapter-date-fns';
+} from "chart.js";
+import "chartjs-adapter-date-fns";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, TimeScale, Title, Tooltip, Legend, Filler);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  TimeScale,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+);
 
 const COLORS = {
-  x: '#e74c3c',
-  y: '#27ae60',
-  z: '#2980b9',
-  accuracy: '#e67e22',
+  x: "#e74c3c",
+  y: "#27ae60",
+  z: "#2980b9",
+  accuracy: "#e67e22",
 };
 
 export function buildAccelerometerOptions() {
   return {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
+    interaction: { mode: "index", intersect: false },
     plugins: {
-      legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } },
+      legend: { position: "top", labels: { usePointStyle: true, padding: 20 } },
       tooltip: {
         callbacks: {
           label(ctx) {
@@ -48,16 +58,20 @@ export function buildAccelerometerOptions() {
     },
     scales: {
       x: {
-        type: 'time',
+        type: "time",
         time: {
-          tooltipFormat: 'HH:mm:ss',
-          displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm', hour: 'HH:mm' },
+          tooltipFormat: "HH:mm:ss",
+          displayFormats: {
+            second: "HH:mm:ss",
+            minute: "HH:mm",
+            hour: "HH:mm",
+          },
         },
-        title: { display: true, text: 'Čas (UTC)' },
+        title: { display: true, text: "Čas (UTC)" },
         ticks: { maxTicksLimit: 15 },
       },
       y: {
-        title: { display: true, text: 'm/s²' },
+        title: { display: true, text: "m/s²" },
         beginAtZero: false,
       },
     },
@@ -68,8 +82,11 @@ export function buildAccelerometerOptions() {
 export function buildAccelerometerDatasets(measurements) {
   return [
     {
-      label: 'X',
-      data: measurements.map((m) => ({ x: new Date(m.timestampUtc), y: m.data.x })),
+      label: "X",
+      data: measurements.map((m) => ({
+        x: new Date(m.timestampUtc),
+        y: m.data.x,
+      })),
       borderColor: COLORS.x,
       backgroundColor: `${COLORS.x}20`,
       pointRadius: 0,
@@ -77,8 +94,11 @@ export function buildAccelerometerDatasets(measurements) {
       tension: 0.1,
     },
     {
-      label: 'Y',
-      data: measurements.map((m) => ({ x: new Date(m.timestampUtc), y: m.data.y })),
+      label: "Y",
+      data: measurements.map((m) => ({
+        x: new Date(m.timestampUtc),
+        y: m.data.y,
+      })),
       borderColor: COLORS.y,
       backgroundColor: `${COLORS.y}20`,
       pointRadius: 0,
@@ -86,8 +106,11 @@ export function buildAccelerometerDatasets(measurements) {
       tension: 0.1,
     },
     {
-      label: 'Z',
-      data: measurements.map((m) => ({ x: new Date(m.timestampUtc), y: m.data.z })),
+      label: "Z",
+      data: measurements.map((m) => ({
+        x: new Date(m.timestampUtc),
+        y: m.data.z,
+      })),
       borderColor: COLORS.z,
       backgroundColor: `${COLORS.z}20`,
       pointRadius: 0,
@@ -101,7 +124,7 @@ export function buildGpsAccuracyOptions() {
   return {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
+    interaction: { mode: "index", intersect: false },
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -114,16 +137,20 @@ export function buildGpsAccuracyOptions() {
     },
     scales: {
       x: {
-        type: 'time',
+        type: "time",
         time: {
-          tooltipFormat: 'HH:mm:ss',
-          displayFormats: { second: 'HH:mm:ss', minute: 'HH:mm', hour: 'HH:mm' },
+          tooltipFormat: "HH:mm:ss",
+          displayFormats: {
+            second: "HH:mm:ss",
+            minute: "HH:mm",
+            hour: "HH:mm",
+          },
         },
-        title: { display: true, text: 'Čas (UTC)' },
+        title: { display: true, text: "Čas (UTC)" },
         ticks: { maxTicksLimit: 15 },
       },
       y: {
-        title: { display: true, text: 'Točnost (m)' },
+        title: { display: true, text: "Točnost (m)" },
         beginAtZero: true,
         suggestedMax: 50,
       },
@@ -135,7 +162,7 @@ export function buildGpsAccuracyOptions() {
 export function buildGpsAccuracyDataset(measurements) {
   return [
     {
-      label: 'Točnost GPS',
+      label: "Točnost GPS",
       data: measurements.map((m) => ({
         x: new Date(m.timestampUtc),
         y: m.data.accuracyMeters ?? 0,
@@ -149,13 +176,4 @@ export function buildGpsAccuracyDataset(measurements) {
       fill: true,
     },
   ];
-}
-
-/**
- * Ekstrahira [lat, lng] pare iz GPS meritev za Leaflet polyline.
- */
-export function extractGpsTrace(measurements) {
-  return measurements
-    .filter((m) => m.data && m.data.latitude != null && m.data.longitude != null)
-    .map((m) => [m.data.latitude, m.data.longitude]);
 }

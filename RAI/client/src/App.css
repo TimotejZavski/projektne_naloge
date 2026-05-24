@@ -442,16 +442,17 @@ h2 {
     }
 
     .dashboard-controls {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    .dashboard-charts {
-        grid-template-columns: 1fr;
+    .dashboard-controls .refresh-indicator {
+        margin-left: 0;
     }
 }
 
 /* ---------------------------------------------------------------- */
-/* SCRUM-41 — dashboard + grafikoni + zemljevid                      */
+/* SCRUM-41 — dashboard + grafikoni                                  */
 /* ---------------------------------------------------------------- */
 
 .dashboard-page {
@@ -463,29 +464,31 @@ h2 {
     overflow: hidden;
 }
 
-.dashboard-page__header {
-    padding: 22px 24px 0;
-}
-
-.dashboard-page__header h2 {
-    font-size: 20px;
-}
-
 .dashboard-controls {
-    align-items: end;
-    display: grid;
+    align-items: center;
+    background: #f9fbff;
+    border-bottom: 1px solid #e1e8f1;
+    display: flex;
+    flex-wrap: wrap;
     gap: 16px;
-    grid-template-columns: 1fr auto auto 1fr;
-    padding: 18px 24px;
+    padding: 14px 20px;
+}
+
+.dashboard-controls > * {
+    flex-shrink: 0;
+}
+
+.dashboard-controls .selector-card {
+    flex: 0 0 auto;
 }
 
 .selector-card {
-    min-width: 0;
+    min-width: 180px;
 }
 
 .selector-label {
     display: grid;
-    gap: 4px;
+    gap: 2px;
 }
 
 .selector-dropdown {
@@ -495,10 +498,10 @@ h2 {
     color: #172033;
     cursor: pointer;
     font-family: inherit;
-    font-size: 15px;
-    min-width: 200px;
-    padding: 10px 12px;
+    font-size: 14px;
+    padding: 8px 10px;
     transition: border-color 120ms ease;
+    min-width: 180px;
 }
 
 .selector-dropdown:focus {
@@ -513,7 +516,7 @@ h2 {
 
 .sensor-toggle {
     display: grid;
-    gap: 4px;
+    gap: 2px;
 }
 
 .sensor-toggle__buttons {
@@ -529,20 +532,16 @@ h2 {
     cursor: pointer;
     display: flex;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     gap: 4px;
-    padding: 10px 16px;
-    transition:
-        background 120ms ease,
-        color 120ms ease,
-        border-color 120ms ease;
+    padding: 8px 14px;
+    transition: all 150ms ease;
 }
 
 .sensor-toggle__btn:first-child {
     border-radius: 6px 0 0 6px;
 }
-
 .sensor-toggle__btn:last-child {
     border-radius: 0 6px 6px 0;
 }
@@ -560,12 +559,12 @@ h2 {
 
 .time-presets {
     display: grid;
-    gap: 4px;
+    gap: 2px;
 }
 
 .time-presets__buttons {
     display: flex;
-    gap: 4px;
+    gap: 3px;
 }
 
 .preset-btn {
@@ -578,10 +577,7 @@ h2 {
     font-size: 13px;
     font-weight: 600;
     padding: 8px 12px;
-    transition:
-        background 120ms ease,
-        color 120ms ease,
-        border-color 120ms ease;
+    transition: all 150ms ease;
     white-space: nowrap;
 }
 
@@ -600,7 +596,7 @@ h2 {
     align-items: center;
     display: flex;
     gap: 8px;
-    justify-content: flex-end;
+    margin-left: auto;
 }
 
 .refresh-dot {
@@ -608,75 +604,67 @@ h2 {
     border-radius: 999px;
     height: 8px;
     width: 8px;
+    flex-shrink: 0;
 }
 
 .refresh-dot--active {
     background: #21c98b;
-    animation: pulse 1s ease-in-out infinite;
+    animation: pulse 1.2s ease-in-out infinite;
 }
 
 @keyframes pulse {
     0%,
     100% {
         opacity: 1;
+        transform: scale(1);
     }
     50% {
-        opacity: 0.3;
+        opacity: 0.4;
+        transform: scale(1.3);
     }
 }
 
-.dashboard-charts {
-    display: grid;
-    gap: 20px;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 24px 24px;
+/* Mapbox trace info */
+
+.map-trace-info {
+    color: #1976d2;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 6px 0 0;
 }
 
 /* ChartPanel */
 
 .chart-panel {
-    background: #f9fbff;
-    border: 1px solid #e1e8f1;
-    border-radius: 8px;
-    overflow: hidden;
+    background: #ffffff;
+    padding: 0;
 }
 
 .chart-panel__header {
-    padding: 16px 20px 0;
+    padding: 16px 24px 0;
 }
 
 .chart-panel__header h3 {
-    font-size: 16px;
+    font-size: 18px;
     margin: 0;
 }
 
 .chart-panel__subtitle {
     color: #58708f;
     font-size: 13px;
-    margin: 4px 0 0;
+    margin: 2px 0 0;
 }
 
 .chart-panel__body {
-    min-height: 280px;
-    padding: 12px 20px 20px;
+    min-height: 320px;
+    padding: 16px 24px 24px;
     position: relative;
 }
 
 .chart-wrapper {
-    height: 320px;
+    height: 380px;
     position: relative;
-}
-
-.map-wrapper {
-    height: 350px;
-    position: relative;
-}
-
-.leaflet-map {
-    border-radius: 6px;
-    height: 100%;
     width: 100%;
-    z-index: 0;
 }
 
 /* Chart skeleton / spinner */
@@ -687,7 +675,7 @@ h2 {
     flex-direction: column;
     gap: 12px;
     justify-content: center;
-    min-height: 240px;
+    min-height: 320px;
 }
 
 .chart-skeleton__spinner {
@@ -695,8 +683,8 @@ h2 {
     border: 3px solid #e1e8f1;
     border-radius: 999px;
     border-top-color: #1976d2;
-    height: 32px;
-    width: 32px;
+    height: 36px;
+    width: 36px;
 }
 
 @keyframes spin {
@@ -711,7 +699,7 @@ h2 {
     font-weight: 600;
 }
 
-/* Chart messages (error / empty / placeholder) */
+/* Chart messages */
 
 .chart-message {
     align-items: center;
@@ -720,8 +708,8 @@ h2 {
     flex-direction: column;
     gap: 12px;
     justify-content: center;
-    min-height: 240px;
-    padding: 24px;
+    min-height: 320px;
+    padding: 32px;
     text-align: center;
 }
 
@@ -729,12 +717,14 @@ h2 {
     background: #fdecec;
     border: 1px solid #f5b5b5;
     color: #9b1c1c;
+    margin: 12px 24px 24px;
 }
 
 .chart-message--empty {
     background: #f4f7fb;
     border: 1px solid #e1e8f1;
     color: #58708f;
+    margin: 12px 24px 24px;
 }
 
 .chart-message p {

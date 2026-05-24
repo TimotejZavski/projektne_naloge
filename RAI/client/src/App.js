@@ -1,34 +1,44 @@
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import "./App.css";
 
 import { AuthProvider } from "./context/AuthContext";
 import AuthPanel from "./components/AuthPanel";
-import DeviceLookup from "./components/DeviceLookup";
 import DashboardPage from "./components/Dashboard/DashboardPage";
+import DeviceLookup from "./components/DeviceLookup";
 
 const playground = {
   name: "Smart Playground Center",
   address: "Ljubljana, Slovenija",
-  coordinates: {
-    lat: 46.0569,
-    lng: 14.5058,
-  },
-  sensors: [
-    { label: "GPS", value: "aktivno" },
-    { label: "Kamera", value: "pripravljeno" },
-    { label: "Gibanje", value: "v testu" },
-  ],
+  coordinates: { lat: 46.0569, lng: 14.5058 },
 };
+
+function encodePolyline(points) {
+  if (!points || points.length === 0) return "";
+  return points.map((p) => `${p.lng},${p.lat}`).join("|");
+}
 
 function App() {
   const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN;
+  const [gpsTrace, setGpsTrace] = useState(null);
+  const [sensorType, setSensorType] = useState("gps");
+
+  const handleGpsTraceChange = useCallback((trace) => {
+    setGpsTrace(trace);
+  }, []);
 
   const mapImageUrl = useMemo(() => {
     if (!mapboxToken) return null;
     const { lat, lng } = playground.coordinates;
-    const marker = `pin-s-playground+1976d2(${lng},${lat})`;
-    return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${marker}/${lng},${lat},14,0/960x520?access_token=${mapboxToken}`;
-  }, [mapboxToken]);
+    let overlays = `pin-s-playground+1976d2(${lng},${lat})`;
+
+    if (gpsTrace && gpsTrace.length >= 2) {
+      overlays += `,path-5+1976d2-0.7(${encodePolyline(gpsTrace)})`;
+    }
+
+    return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${overlays}/auto/960x520?access_token=${mapboxToken}`;
+  }, [mapboxToken, gpsTrace]);
+
+  const gpsCount = gpsTrace ? gpsTrace.length : 0;
 
   return (
     <AuthProvider>
@@ -38,8 +48,8 @@ function App() {
             <p className="eyebrow">RAI dashboard</p>
             <h1>Smart Playgrounds</h1>
             <p className="lead">
-              Pregled igralisca, povezave senzorjev in zgodovine meritev
-              (SCRUM-25, SCRUM-29).
+              Pregled igrišča, povezave senzorjev in zgodovine meritev
+              (SCRUM-25, SCRUM-29, SCRUM-41).
             </p>
           </div>
           <AuthPanel />
@@ -51,6 +61,9 @@ function App() {
               <div>
                 <p className="eyebrow">Mapbox API</p>
                 <h2>{playground.name}</h2>
+                {gpsCount > 0 && (
+                  <p className="map-trace-info">📍 GPS sled: {gpsCount} točk</p>
+                )}
               </div>
               <span>
                 {playground.coordinates.lat}, {playground.coordinates.lng}
@@ -61,7 +74,11 @@ function App() {
               <img
                 className="map-preview"
                 src={mapImageUrl}
-                alt="Mapbox prikaz lokacije igralisca"
+                alt={
+                  gpsCount > 0
+                    ? `GPS sled z ${gpsCount} točkami`
+                    : "Mapbox prikaz lokacije igrališča"
+                }
               />
             ) : (
               <div className="map-placeholder">
@@ -77,17 +94,22 @@ function App() {
             </div>
 
             <div className="sensor-list">
-              {playground.sensors.map((sensor) => (
-                <div className="sensor-row" key={sensor.label}>
-                  <span>{sensor.label}</span>
-                  <strong>{sensor.value}</strong>
+              {[
+                { label: "GPS", value: "aktivno" },
+                { label: "Kamera", value: "pripravljeno" },
+                { label: "Gibanje", value: "v testu" },
+              ].map((s) => (
+                <div className="sensor-row" key={s.label}>
+                  <span>{s.label}</span>
+                  <strong>{s.value}</strong>
                 </div>
               ))}
             </div>
           </aside>
         </section>
 
-        <DashboardPage />
+        <DashboardPage onGpsTraceChange={handleGpsTraceChange} />
+
         <DeviceLookup />
       </main>
     </AuthProvider>
