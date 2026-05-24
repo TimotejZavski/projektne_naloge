@@ -16,19 +16,19 @@
  * Komponenta ne reseva avtorizacije sama - polagamo se na AuthContext.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 
-import { fetchDeviceByDeviceId } from '../api/devices';
-import { listMeasurementsForDevice } from '../api/measurements';
-import { ApiError } from '../api/client';
-import { useApi } from '../hooks/useApi';
-import { useAuth } from '../context/AuthContext';
+import { fetchDeviceByDeviceId } from "../api/devices";
+import { listMeasurementsForDevice } from "../api/measurements";
+import { ApiError } from "../api/client";
+import { useApi } from "../hooks/useApi";
+import { useAuth } from "../context/AuthContext";
 
 const MEASUREMENT_LIMIT = 20;
 
 export default function DeviceLookup() {
   const { status: authStatus } = useAuth();
-  const [deviceId, setDeviceId] = useState('');
+  const [deviceId, setDeviceId] = useState("");
 
   const lookup = useApi(
     useCallback(async (signal, idValue) => {
@@ -36,22 +36,27 @@ export default function DeviceLookup() {
       // celotnega pogleda zaradi prazne zgodovine.
       const [deviceRes, measurementsRes] = await Promise.allSettled([
         fetchDeviceByDeviceId(idValue, { signal }),
-        listMeasurementsForDevice(idValue, { limit: MEASUREMENT_LIMIT }, { signal }),
+        listMeasurementsForDevice(
+          idValue,
+          { limit: MEASUREMENT_LIMIT },
+          { signal },
+        ),
       ]);
 
-      if (deviceRes.status === 'rejected') {
+      if (deviceRes.status === "rejected") {
         throw deviceRes.reason;
       }
       return {
         device: deviceRes.value && deviceRes.value.device,
         measurements:
-          measurementsRes.status === 'fulfilled'
-            ? (measurementsRes.value && measurementsRes.value.measurements) || []
+          measurementsRes.status === "fulfilled"
+            ? (measurementsRes.value && measurementsRes.value.measurements) ||
+              []
             : [],
         measurementsError:
-          measurementsRes.status === 'rejected' ? measurementsRes.reason : null,
+          measurementsRes.status === "rejected" ? measurementsRes.reason : null,
       };
-    }, [])
+    }, []),
   );
 
   const handleSubmit = (event) => {
@@ -66,10 +71,7 @@ export default function DeviceLookup() {
   return (
     <section className="lookup-panel" aria-labelledby="lookup-heading">
       <div className="panel-heading">
-        <div>
-          <p className="eyebrow">SCRUM-29</p>
-          <h2 id="lookup-heading">Pregled naprave po deviceId</h2>
-        </div>
+        <h2 id="lookup-heading">Pregled naprave po deviceId</h2>
       </div>
 
       <form className="lookup-form" onSubmit={handleSubmit} noValidate>
@@ -88,13 +90,16 @@ export default function DeviceLookup() {
         <button
           type="submit"
           className="primary-button"
-          disabled={lookup.isLoading || !deviceId.trim() || authStatus !== 'authed'}
+          disabled={
+            lookup.isLoading || !deviceId.trim() || authStatus !== "authed"
+          }
         >
-          {lookup.isLoading ? 'Iscem…' : 'Poisci'}
+          {lookup.isLoading ? "Iscem…" : "Poisci"}
         </button>
       </form>
       <p id="lookup-help" className="hint">
-        Vnesi user-facing identifikator naprave (3–64 znakov: <code>a-z 0-9 . _ -</code>).
+        Vnesi user-facing identifikator naprave (3–64 znakov:{" "}
+        <code>a-z 0-9 . _ -</code>).
       </p>
 
       {errorMessage ? (
@@ -116,17 +121,19 @@ export default function DeviceLookup() {
 
 function describeError(error, authStatus) {
   if (!error) return null;
-  if (authStatus !== 'authed') {
-    return 'Za iskanje naprav je potrebna prijava.';
+  if (authStatus !== "authed") {
+    return "Za iskanje naprav je potrebna prijava.";
   }
   if (error instanceof ApiError) {
-    if (error.status === 401) return 'Seja je potekla. Prijavi se ponovno.';
-    if (error.status === 404) return 'Naprava ne obstaja ali ne pripada prijavljenemu uporabniku.';
-    if (error.status === 400) return error.message || 'Neveljaven deviceId.';
-    if (error.status === 0) return 'Omrezna napaka. Preveri povezavo s strezniku.';
-    return error.message || 'Nepricakovana napaka.';
+    if (error.status === 401) return "Seja je potekla. Prijavi se ponovno.";
+    if (error.status === 404)
+      return "Naprava ne obstaja ali ne pripada prijavljenemu uporabniku.";
+    if (error.status === 400) return error.message || "Neveljaven deviceId.";
+    if (error.status === 0)
+      return "Omrezna napaka. Preveri povezavo s strezniku.";
+    return error.message || "Nepricakovana napaka.";
   }
-  return 'Nepricakovana napaka.';
+  return "Nepricakovana napaka.";
 }
 
 function DeviceResult({ device, measurements, measurementsError }) {
@@ -140,22 +147,26 @@ function DeviceResult({ device, measurements, measurementsError }) {
             <p className="eyebrow">Naprava</p>
             <h3>{device.name || device.deviceId}</h3>
           </div>
-          <span className={`pill pill--${device.isActive ? 'active' : 'inactive'}`}>
-            {device.isActive ? 'aktivna' : 'neaktivna'}
+          <span
+            className={`pill pill--${device.isActive ? "active" : "inactive"}`}
+          >
+            {device.isActive ? "aktivna" : "neaktivna"}
           </span>
         </header>
         <dl className="device-card__meta">
           <div>
             <dt>deviceId</dt>
-            <dd><code>{device.deviceId}</code></dd>
+            <dd>
+              <code>{device.deviceId}</code>
+            </dd>
           </div>
           <div>
             <dt>Platforma</dt>
-            <dd>{device.platform || '—'}</dd>
+            <dd>{device.platform || "—"}</dd>
           </div>
           <div>
             <dt>App verzija</dt>
-            <dd>{device.appVersion || '—'}</dd>
+            <dd>{device.appVersion || "—"}</dd>
           </div>
           <div>
             <dt>Zadnji signal</dt>
@@ -197,10 +208,20 @@ function DeviceResult({ device, measurements, measurementsError }) {
             <tbody>
               {measurements.map((m) => (
                 <tr key={m._id}>
-                  <td><time dateTime={m.timestampUtc}>{formatDate(m.timestampUtc)}</time></td>
-                  <td><span className={`pill pill--${m.sensorType}`}>{m.sensorType}</span></td>
+                  <td>
+                    <time dateTime={m.timestampUtc}>
+                      {formatDate(m.timestampUtc)}
+                    </time>
+                  </td>
+                  <td>
+                    <span className={`pill pill--${m.sensorType}`}>
+                      {m.sensorType}
+                    </span>
+                  </td>
                   <td>{m.source}</td>
-                  <td><code>{summariseData(m.sensorType, m.data)}</code></td>
+                  <td>
+                    <code>{summariseData(m.sensorType, m.data)}</code>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -212,32 +233,32 @@ function DeviceResult({ device, measurements, measurementsError }) {
 }
 
 function describeShort(err) {
-  if (err instanceof ApiError) return `HTTP ${err.status || '?'}`;
-  return 'napaka';
+  if (err instanceof ApiError) return `HTTP ${err.status || "?"}`;
+  return "napaka";
 }
 
 function formatDate(value) {
-  if (!value) return '—';
+  if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toISOString().replace('T', ' ').slice(0, 19);
+  return d.toISOString().replace("T", " ").slice(0, 19);
 }
 
 function summariseData(sensorType, data) {
-  if (!data || typeof data !== 'object') return '—';
+  if (!data || typeof data !== "object") return "—";
   switch (sensorType) {
-    case 'gps': {
+    case "gps": {
       const { latitude, longitude, accuracyMeters } = data;
-      const acc = accuracyMeters != null ? ` ±${accuracyMeters}m` : '';
+      const acc = accuracyMeters != null ? ` ±${accuracyMeters}m` : "";
       return `${formatNumber(latitude)}, ${formatNumber(longitude)}${acc}`;
     }
-    case 'accelerometer': {
+    case "accelerometer": {
       const { x, y, z, unit } = data;
-      return `x=${formatNumber(x)} y=${formatNumber(y)} z=${formatNumber(z)} ${unit || ''}`.trim();
+      return `x=${formatNumber(x)} y=${formatNumber(y)} z=${formatNumber(z)} ${unit || ""}`.trim();
     }
-    case 'camera': {
+    case "camera": {
       const { captureId, mediaType } = data;
-      return `${mediaType || 'image'} ${captureId || ''}`.trim();
+      return `${mediaType || "image"} ${captureId || ""}`.trim();
     }
     default:
       return JSON.stringify(data);
@@ -245,7 +266,9 @@ function summariseData(sensorType, data) {
 }
 
 function formatNumber(value) {
-  if (typeof value !== 'number' || Number.isNaN(value)) return String(value);
+  if (typeof value !== "number" || Number.isNaN(value)) return String(value);
   // Do 5 decimalk za koordinate, locene tisocice prepuscamo brwoser-locale-u
-  return Number.isInteger(value) ? String(value) : value.toFixed(5).replace(/\.?0+$/, '');
+  return Number.isInteger(value)
+    ? String(value)
+    : value.toFixed(5).replace(/\.?0+$/, "");
 }

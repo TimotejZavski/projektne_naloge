@@ -22,10 +22,6 @@ function App() {
           <div>
             <p className="eyebrow">RAI dashboard</p>
             <h1>Smart Playgrounds</h1>
-            <p className="lead">
-              Pregled igrišča, senzorskih meritev in GPS sledi (SCRUM-25,
-              SCRUM-29, SCRUM-41).
-            </p>
           </div>
           <AuthPanel />
         </section>
