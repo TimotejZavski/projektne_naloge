@@ -2,11 +2,17 @@
  * GpsMap — interaktivni Leaflet/OSM zemljevid z GPS sledjo (SCRUM-41).
  *
  * Neodvisno od chart toggle-a: vedno prikazuje GPS sled za izbrano napravo.
- * Podatke fetcha samostojno prek GET /api/measurements.
+ * Vsaka točka je interaktivna — hover prikaže timestamp, koordinate, točnost.
  */
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Polyline } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Polyline,
+  CircleMarker,
+  Tooltip,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -14,43 +20,76 @@ import { listMeasurements } from "../../api/measurements";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
 const LJ_CENTER = [46.0569, 14.5058];
 
+function fmtTime(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("sl-SI", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function fmtCoord(n) {
+  if (n == null) return "—";
+  return n.toFixed(6);
+}
+
 export default function GpsMap({ deviceId }) {
-  const [trace, setTrace] = useState([]);
+  const [points, setPoints] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!deviceId) {
-      setTrace([]);
+      setPoints([]);
       return;
     }
     let cancelled = false;
     const to = new Date().toISOString();
     const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-    listMeasurements({ deviceId, sensorType: "gps", from, to, limit: 500, sort: "asc" })
+    listMeasurements({
+      deviceId,
+      sensorType: "gps",
+      from,
+      to,
+      limit: 500,
+      sort: "asc",
+    })
       .then((data) => {
         if (cancelled) return;
-        const points = (data?.measurements || [])
+        const pts = (data?.measurements || [])
           .filter((m) => m.data?.latitude != null && m.data?.longitude != null)
-          .map((m) => [m.data.latitude, m.data.longitude]);
-        setTrace(points);
+          .map((m) => ({
+            lat: m.data.latitude,
+            lng: m.data.longitude,
+            acc: m.data.accuracyMeters,
+            ts: m.timestampUtc,
+            id: m._id,
+          }));
+        setPoints(pts);
         setError(null);
       })
       .catch((err) => {
         if (!cancelled) setError(err);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [deviceId]);
 
-  const bounds = trace.length >= 2 ? L.latLngBounds(trace) : null;
+  const positions = points.map((p) => [p.lat, p.lng]);
+  const bounds = positions.length >= 2 ? L.latLngBounds(positions) : null;
 
   return (
     <div className="map-panel">
@@ -58,8 +97,10 @@ export default function GpsMap({ deviceId }) {
         <div>
           <p className="eyebrow">GPS sled</p>
           <h2>{deviceId || "Izberi napravo"}</h2>
-          {trace.length > 0 && (
-            <p className="map-trace-info">📍 {trace.length} točk — zadnja ura</p>
+          {points.length > 0 && (
+            <p className="map-trace-info">
+              📍 {points.length} točk — zadnja ura
+            </p>
           )}
         </div>
       </div>
@@ -81,9 +122,41 @@ export default function GpsMap({ deviceId }) {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {trace.length >= 2 && (
-              <Polyline positions={trace} color="#1976d2" weight={4} opacity={0.8} />
+            {positions.length >= 2 && (
+              <Polyline
+                positions={positions}
+                color="#1976d2"
+                weight={4}
+                opacity={0.8}
+              />
             )}
+            {points.map((p) => (
+              <CircleMarker
+                key={p.id}
+                center={[p.lat, p.lng]}
+                radius={5}
+                pathOptions={{
+                  color: "#1976d2",
+                  fillColor: "#1976d2",
+                  fillOpacity: 0.6,
+                  weight: 1.5,
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -8]} opacity={0.95}>
+                  <div className="map-tooltip">
+                    <strong>🕐 {fmtTime(p.ts)}</strong>
+                    <br />
+                    📍 {fmtCoord(p.lat)}, {fmtCoord(p.lng)}
+                    {p.acc != null && (
+                      <>
+                        <br />
+                        🎯 Točnost: {p.acc} m
+                      </>
+                    )}
+                  </div>
+                </Tooltip>
+              </CircleMarker>
+            ))}
           </MapContainer>
         </div>
       )}

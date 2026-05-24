@@ -682,6 +682,11 @@ h2 {
     width: 100%;
 }
 
+.map-tooltip {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
 /* Chart skeleton / spinner */
 
 .chart-skeleton {
