@@ -38,15 +38,20 @@ function fmtTime(iso) {
 export default function GpsMap({ deviceId }) {
   const [points, setPoints] = useState([]);
   const [error, setError] = useState(null);
+  const [debug, setDebug] = useState("");
 
   useEffect(() => {
+    console.log("[GpsMap] deviceId changed:", deviceId);
     if (!deviceId) {
       setPoints([]);
+      setDebug("no deviceId");
       return;
     }
     let c = false;
     const to = new Date().toISOString();
     const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    console.log("[GpsMap] fetching GPS for", deviceId, { from, to });
+
     listMeasurements({
       deviceId,
       sensorType: "gps",
@@ -57,23 +62,29 @@ export default function GpsMap({ deviceId }) {
     })
       .then((d) => {
         if (c) return;
-        setPoints(
-          (d?.measurements || [])
-            .filter(
-              (m) => m.data?.latitude != null && m.data?.longitude != null,
-            )
-            .map((m) => ({
-              lat: m.data.latitude,
-              lng: m.data.longitude,
-              acc: m.data.accuracyMeters,
-              ts: m.timestampUtc,
-              id: m._id,
-            })),
-        );
+        console.log("[GpsMap] raw response:", d);
+        const raw = d?.measurements || [];
+        console.log("[GpsMap] measurements count:", raw.length);
+        const pts = raw
+          .filter((m) => m.data?.latitude != null && m.data?.longitude != null)
+          .map((m) => ({
+            lat: m.data.latitude,
+            lng: m.data.longitude,
+            acc: m.data.accuracyMeters,
+            ts: m.timestampUtc,
+            id: m._id,
+          }));
+        console.log("[GpsMap] filtered points:", pts.length, "first:", pts[0]);
+        setPoints(pts);
         setError(null);
+        setDebug(`OK: ${pts.length} points`);
       })
       .catch((e) => {
-        if (!c) setError(e);
+        if (!c) {
+          console.error("[GpsMap] fetch error:", e);
+          setError(e);
+          setDebug("ERROR: " + (e.message || String(e)));
+        }
       });
     return () => {
       c = true;
@@ -89,22 +100,28 @@ export default function GpsMap({ deviceId }) {
         <div>
           <p className="eyebrow">GPS sled</p>
           <h2>{deviceId || "Izberi napravo"}</h2>
-          {points.length > 0 && (
-            <p className="map-trace-info">
-              📍 {points.length} točk — zadnja ura
-            </p>
-          )}
+          <p className="map-trace-info">
+            📍 {points.length} točk — {debug}
+          </p>
         </div>
       </div>
 
       {error ? (
         <div className="map-placeholder">
-          <span>Napaka pri nalaganju GPS podatkov</span>
+          <span>Napaka: {debug}</span>
+        </div>
+      ) : points.length === 0 ? (
+        <div className="map-placeholder">
+          <span>
+            {deviceId
+              ? "Ni GPS podatkov za to napravo"
+              : "Izberi napravo za prikaz GPS sledi"}
+          </span>
         </div>
       ) : (
         <div className="map-wrapper">
           <MapContainer
-            key={deviceId || "empty"}
+            key={deviceId}
             center={LJ_CENTER}
             zoom={14}
             bounds={bounds || undefined}
@@ -135,7 +152,7 @@ export default function GpsMap({ deviceId }) {
                   weight: 2,
                 }}
               >
-                <Tooltip permanent={false} direction="top" offset={[0, -10]}>
+                <Tooltip direction="top" offset={[0, -10]}>
                   <div style={{ fontSize: 12, lineHeight: 1.4 }}>
                     <strong>{fmtTime(p.ts)}</strong>
                     <br />
