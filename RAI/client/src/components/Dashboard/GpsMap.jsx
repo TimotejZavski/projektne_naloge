@@ -1,8 +1,5 @@
 /**
  * GpsMap — interaktivni Leaflet/OSM zemljevid z GPS sledjo (SCRUM-41).
- *
- * Neodvisno od chart toggle-a: vedno prikazuje GPS sled za izbrano napravo.
- * Vsaka točka je interaktivna — hover prikaže timestamp, koordinate, točnost.
  */
 
 import { useEffect, useState } from "react";
@@ -15,7 +12,6 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-
 import { listMeasurements } from "../../api/measurements";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -39,11 +35,6 @@ function fmtTime(iso) {
   });
 }
 
-function fmtCoord(n) {
-  if (n == null) return "—";
-  return n.toFixed(6);
-}
-
 export default function GpsMap({ deviceId }) {
   const [points, setPoints] = useState([]);
   const [error, setError] = useState(null);
@@ -53,10 +44,9 @@ export default function GpsMap({ deviceId }) {
       setPoints([]);
       return;
     }
-    let cancelled = false;
+    let c = false;
     const to = new Date().toISOString();
     const from = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-
     listMeasurements({
       deviceId,
       sensorType: "gps",
@@ -65,26 +55,28 @@ export default function GpsMap({ deviceId }) {
       limit: 500,
       sort: "asc",
     })
-      .then((data) => {
-        if (cancelled) return;
-        const pts = (data?.measurements || [])
-          .filter((m) => m.data?.latitude != null && m.data?.longitude != null)
-          .map((m) => ({
-            lat: m.data.latitude,
-            lng: m.data.longitude,
-            acc: m.data.accuracyMeters,
-            ts: m.timestampUtc,
-            id: m._id,
-          }));
-        setPoints(pts);
+      .then((d) => {
+        if (c) return;
+        setPoints(
+          (d?.measurements || [])
+            .filter(
+              (m) => m.data?.latitude != null && m.data?.longitude != null,
+            )
+            .map((m) => ({
+              lat: m.data.latitude,
+              lng: m.data.longitude,
+              acc: m.data.accuracyMeters,
+              ts: m.timestampUtc,
+              id: m._id,
+            })),
+        );
         setError(null);
       })
-      .catch((err) => {
-        if (!cancelled) setError(err);
+      .catch((e) => {
+        if (!c) setError(e);
       });
-
     return () => {
-      cancelled = true;
+      c = true;
     };
   }, [deviceId]);
 
@@ -112,15 +104,16 @@ export default function GpsMap({ deviceId }) {
       ) : (
         <div className="map-wrapper">
           <MapContainer
-            center={bounds ? bounds.getCenter() : LJ_CENTER}
-            zoom={bounds ? undefined : 14}
+            key={deviceId || "empty"}
+            center={LJ_CENTER}
+            zoom={14}
             bounds={bounds || undefined}
             className="leaflet-map"
             scrollWheelZoom={true}
           >
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://osm.org/copyright">OSM</a>'
+              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
             />
             {positions.length >= 2 && (
               <Polyline
@@ -134,23 +127,23 @@ export default function GpsMap({ deviceId }) {
               <CircleMarker
                 key={p.id}
                 center={[p.lat, p.lng]}
-                radius={5}
+                radius={6}
                 pathOptions={{
                   color: "#1976d2",
                   fillColor: "#1976d2",
-                  fillOpacity: 0.6,
-                  weight: 1.5,
+                  fillOpacity: 0.5,
+                  weight: 2,
                 }}
               >
-                <Tooltip direction="top" offset={[0, -8]} opacity={0.95}>
-                  <div className="map-tooltip">
-                    <strong>🕐 {fmtTime(p.ts)}</strong>
+                <Tooltip permanent={false} direction="top" offset={[0, -10]}>
+                  <div style={{ fontSize: 12, lineHeight: 1.4 }}>
+                    <strong>{fmtTime(p.ts)}</strong>
                     <br />
-                    📍 {fmtCoord(p.lat)}, {fmtCoord(p.lng)}
+                    {p.lat.toFixed(6)}, {p.lng.toFixed(6)}
                     {p.acc != null && (
                       <>
                         <br />
-                        🎯 Točnost: {p.acc} m
+                        Točnost: {p.acc} m
                       </>
                     )}
                   </div>
