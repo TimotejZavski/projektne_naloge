@@ -1,21 +1,22 @@
-import { useMemo } from 'react';
-import './App.css';
+import { useMemo } from "react";
+import "./App.css";
 
-import { AuthProvider } from './context/AuthContext';
-import AuthPanel from './components/AuthPanel';
-import DeviceLookup from './components/DeviceLookup';
+import { AuthProvider } from "./context/AuthContext";
+import AuthPanel from "./components/AuthPanel";
+import DeviceLookup from "./components/DeviceLookup";
+import DashboardPage from "./components/Dashboard/DashboardPage";
 
 const playground = {
-  name: 'Smart Playground Center',
-  address: 'Ljubljana, Slovenija',
+  name: "Smart Playground Center",
+  address: "Ljubljana, Slovenija",
   coordinates: {
     lat: 46.0569,
     lng: 14.5058,
   },
   sensors: [
-    { label: 'GPS', value: 'aktivno' },
-    { label: 'Kamera', value: 'pripravljeno' },
-    { label: 'Gibanje', value: 'v testu' },
+    { label: "GPS", value: "aktivno" },
+    { label: "Kamera", value: "pripravljeno" },
+    { label: "Gibanje", value: "v testu" },
   ],
 };
 
@@ -37,7 +38,8 @@ function App() {
             <p className="eyebrow">RAI dashboard</p>
             <h1>Smart Playgrounds</h1>
             <p className="lead">
-              Pregled igralisca, povezave senzorjev in zgodovine meritev (SCRUM-25, SCRUM-29).
+              Pregled igralisca, povezave senzorjev in zgodovine meritev
+              (SCRUM-25, SCRUM-29).
             </p>
           </div>
           <AuthPanel />
@@ -50,11 +52,17 @@ function App() {
                 <p className="eyebrow">Mapbox API</p>
                 <h2>{playground.name}</h2>
               </div>
-              <span>{playground.coordinates.lat}, {playground.coordinates.lng}</span>
+              <span>
+                {playground.coordinates.lat}, {playground.coordinates.lng}
+              </span>
             </div>
 
             {mapImageUrl ? (
-              <img className="map-preview" src={mapImageUrl} alt="Mapbox prikaz lokacije igralisca" />
+              <img
+                className="map-preview"
+                src={mapImageUrl}
+                alt="Mapbox prikaz lokacije igralisca"
+              />
             ) : (
               <div className="map-placeholder">
                 <span>Mapbox token ni nastavljen</span>
@@ -79,6 +87,7 @@ function App() {
           </aside>
         </section>
 
+        <DashboardPage />
         <DeviceLookup />
       </main>
     </AuthProvider>
