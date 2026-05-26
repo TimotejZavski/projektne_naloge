@@ -18,7 +18,9 @@ FROM node:${NODE_VERSION} AS client-builder
 
 WORKDIR /app/client
 
-COPY client/package.json client/package-lock.json* ./
+# package-lock.json is ignored in this repo, so Render's Git clone does not
+# include it. Copy only committed files to keep Docker builds reproducible there.
+COPY client/package.json ./
 RUN npm install --no-audit --no-fund
 
 COPY client/ ./
@@ -29,7 +31,7 @@ FROM node:${NODE_VERSION} AS deps
 
 WORKDIR /app
 
-COPY server/package.json server/package-lock.json* ./
+COPY server/package.json ./
 RUN npm install --omit=dev --no-audit --no-fund && \
     npm cache clean --force
 

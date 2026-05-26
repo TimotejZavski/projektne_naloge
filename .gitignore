@@ -35,6 +35,9 @@ obj/
 **/package-lock.json
 **/yarn.lock
 
+# Scraper data exports
+**/data/
+
 
 # VID images
 VID/**/*.[jJ][pP][gG]
