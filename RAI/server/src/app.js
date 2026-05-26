@@ -5,6 +5,7 @@
  * `app` brez `app.listen()` in ga uporabimo s supertest.
  */
 
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -95,6 +96,17 @@ function createApp() {
   // API rute
   // ------------------------------------------------------------------
   app.use("/api", routes);
+
+  // ------------------------------------------------------------------
+  // Static files (React build) - samo v produkciji
+  // ------------------------------------------------------------------
+  if (env.NODE_ENV === "production") {
+    const clientBuild = path.join(__dirname, "..", "..", "client", "build");
+    app.use(express.static(clientBuild));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(clientBuild, "index.html"));
+    });
+  }
 
   // ------------------------------------------------------------------
   // 404 - karkoli ni ujeto, vrni 404 v JSON formatu

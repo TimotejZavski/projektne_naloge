@@ -1,20 +1,8 @@
-const ScraperRunner = require('./ScraperRunner');
-const HttpSourceClient = require('./HttpSourceClient');
-const { getSources } = require('./sources');
-const { extractFromRawResult, extractTrafficCounters } = require('./extractors');
-const ScraperIngestionService = require('./ingestion/ScraperIngestionService');
-const {
-  ScraperOutputApiClient,
-  ScraperOutputApiError,
-} = require('./output/ScraperOutputApiClient');
+const PlaygroundScraper = require("./PlaygroundScraper");
+const { getSources } = require("./sources");
 
 module.exports = {
-  ScraperRunner,
-  HttpSourceClient,
-  extractFromRawResult,
-  extractTrafficCounters,
+  PlaygroundScraper,
+  scrapePlaygrounds: PlaygroundScraper.scrapePlaygrounds,
   getSources,
-  ScraperIngestionService,
-  ScraperOutputApiClient,
-  ScraperOutputApiError,
 };

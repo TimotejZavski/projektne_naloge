@@ -1,143 +1,114 @@
-# Scraper
+# Scraper — Javna igrišča Maribor
 
-SCRUM-31 doda osnovno strukturo za zajem podatkov iz zunanjih virov.
+Scraper zajema podatke o javnih otroških igriščih iz uradne spletne strani
+Mestne občine Maribor in jih shrani v MongoDB za prikaz v dashboardu (zemljevid)
+in spletni aplikaciji.
 
-Trenutno je scraper namerno locen od API ingestion in DB pipeline dela. To pomeni, da lahko lokalno pobere surove podatke iz konfiguriranih virov ali fixture datotek, naslednji task pa iz tega izlusci uporabne podatke.
+**Vir:** https://maribor.si/mestni-servis/otroci/javna-igrisca/
+
+## Kaj se scrape-a
+
+Stran uporablja WordPress paginacijo (`?stran=1..5`), vsaka stran vsebuje
+HTML tabelo v `div.pins_table_wrap_parent > table`. Vsaka vrstica ima:
+
+| Stolpec | Primer |
+|---------|--------|
+| Ime igrišča | Igrišče Mestni park |
+| Naslov | Igrala V Mestnem Parku MB, Maribor |
+| Povezava | (prazno) |
+
+Skupaj ~37 igrišč na 5 straneh.
+
+## Geokodiranje
+
+Ker stran ne vsebuje GPS koordinat, scraper **geokodira naslove prek Nominatim
+API-ja** (OpenStreetMap, brezplačno, max 1 req/s). Za znane lokacije so
+koordinate že ročno vnešene v `MANUAL_GEOCODE` (PlaygroundScraper.js), kar
+pospeši scrape.
+
+Rezultat: vsako igrišče dobi `location: { latitude, longitude }` za prikaz
+na OpenStreetMap zemljevidu.
 
 ## Struktura
 
-- `src/scraper/sources.js` - seznam virov podatkov
-- `src/scraper/HttpSourceClient.js` - branje fixture datotek ali HTTP virov
-- `src/scraper/ScraperRunner.js` - skupen tok za zbiranje surovih podatkov
-- `src/scraper/fixtures/` - lokalni vzorcni podatki za testiranje brez zunanjega API-ja
-- `scripts/smoke-scraper-structure.js` - hiter smoke test
+```
+src/scraper/
+  ├── index.js                # barrel export
+  ├── sources.js              # definicije virov
+  └── PlaygroundScraper.js    # scrape + ekstrakcija + geokodiranje
+
+src/models/Playground.js      # Mongoose model
+
+src/controllers/scraper.controller.js   # runScraper, listPlaygrounds
+src/routes/scraper.routes.js           # /api/scraper/*
+```
+
+## API endpointi
+
+| Metoda | Pot | Avtentikacija | Opis |
+|--------|-----|---------------|------|
+| `POST` | `/api/scraper/run` | requireAuth | Sproži scrape vseh 5 strani, geokodira in shrani v bazo |
+| `GET` | `/api/scraper/playgrounds` | javno | Vrne vsa shranjena igrišča z lokacijami |
+
+### Primer odgovora `POST /run`:
+
+```json
+{
+  "summary": {
+    "totalScraped": 37,
+    "totalGeocoded": 35,
+    "inserted": 35,
+    "updated": 0,
+    "skipped": 2,
+    "skippedDetails": [
+      {"name": "Igrala Zrkovci", "reason": "geocoding_failed"}
+    ],
+    "errors": []
+  }
+}
+```
+
+### Primer odgovora `GET /playgrounds`:
+
+```json
+{
+  "playgrounds": [
+    {
+      "name": "Igrišče Mestni park",
+      "address": "Igrala V Mestnem Parku MB, Maribor",
+      "location": {"latitude": 46.5607, "longitude": 15.6451},
+      "sourceUrl": "https://maribor.si/mestni-servis/otroci/javna-igrisca/",
+      "scrapedAt": "2026-05-26T..."
+    }
+  ],
+  "count": 35
+}
+```
 
 ## Zagon
 
 ```bash
 cd RAI/server
+
+# Smoke test (preveri parsanje in realni scrape)
 npm run scraper:smoke
+
+# Ročno proženje prek API-ja (potrebuje running server)
+curl -X POST http://localhost:5000/api/scraper/run \
+  -H "Authorization: Bearer <jwt_token>"
+
+# Branje igrišč
+curl http://localhost:5000/api/scraper/playgrounds
 ```
 
-Smoke test trenutno uporablja lokalni fixture, zato ne potrebuje delujoce baze, API endpointov ali omrezja.
+## Idempotentnost
 
-## Ekstrakcija podatkov
+`POST /run` uporablja `findOneAndUpdate` z `upsert: true` na ključu
+`(sourceId, name)`. Ponoven zagon istega vira **ne podvoji** zapisov,
+ampak posodobi naslov, lokacijo in `scrapedAt`.
 
-SCRUM-32 doda ekstrakcijo relevantnih podatkov iz surovih scraper rezultatov.
-Trenutno je podprt primer prometnih stevcev, ki vrne normalizirane zapise z
-lokacijo, stevilom vozil, povprecno hitrostjo in casom meritve.
+## Ročne koordinate
 
-```bash
-cd RAI/server
-npm run scraper:extract:smoke
-```
-
-Ta korak samo pripravi podatke za nadaljnjo obdelavo. Ne klice API-ja in ne
-zapisuje v MongoDB, zato ne posega v SCRUM-33 ali SCRUM-35.
-
-## Vnos podatkov v bazo (SCRUM-33)
-
-SCRUM-33 doda celoten **scraper -> extractor -> MongoDB** tok in API
-endpoint-e za branje stanovanih meritev.
-
-### Komponente
-
-- `src/models/TrafficCounterMeasurement.js` - Mongoose model
-  (unique compound index `(sourceId, stationId, measuredAt)` -> idempotentnost)
-- `src/scraper/ingestion/ScraperIngestionService.js` - vnos logika
-  (`ingestExtracted`, `runPipeline`)
-- `src/routes/scraper.routes.js` + `src/controllers/scraper.controller.js`
-  - rest API za sprozeni in branje
-
-### API endpointi (vsi zahtevajo prijavo)
-
-| Metoda | Pot | Opis |
-| --- | --- | --- |
-| `POST` | `/api/scraper/run` | Sprozi pipeline za vse vire ali podan podseznam (`{ sourceIds: ["..."] }`). V `NODE_ENV=production` samo admin role. |
-| `POST` | `/api/scraper/output` | Sprejme ze ekstrahiran scraper output (`{ records: [...] }`) in ga poslje v DB ingestion pipeline. V `NODE_ENV=production` samo admin role. |
-| `GET`  | `/api/scraper/measurements` | Bere shranjene meritve s filtri `sourceId`, `stationId`, `from`, `to`, `limit` (default 100, max 1000). |
-| `GET`  | `/api/scraper/stations` | Distinct postaje z zadnjo meritvijo (za select v UI / popup na zemljevidu). |
-
-Odgovor `POST /run` vrne podroben `summary`:
-
-```json
-{
-  "summary": {
-    "sourcesAttempted": 1,
-    "sourcesOk": 1,
-    "sourcesFailed": 0,
-    "extractedCount": 2,
-    "ingestion": {
-      "totalCount": 2,
-      "insertedCount": 2,
-      "modifiedCount": 0,
-      "matchedCount": 0,
-      "skippedCount": 0,
-      "skipped": [],
-      "errors": []
-    },
-    "failedSources": []
-  }
-}
-```
-
-### Smoke test
-
-```bash
-cd RAI/server
-npm run scraper:ingest:smoke
-```
-
-Skripta uporabi `mongodb-memory-server`, zato ne potrebuje produkcijskega
-Mongo-ja. Preveri tudi idempotentnost: drugi run ne sme vstavit novih
-zapisov.
-
-### Idempotentnost in upsert semantika
-
-`ingestExtracted` uporabi `updateOne(..., { upsert: true })` z kljucem
-`(sourceId, stationId, measuredAt)`. Posledice:
-
-- Isti scraper snapshot, dvakrat zagnan -> `insertedCount = 0`
-  (zapisi se prepoznajo kot dupli).
-- Spremenjene metrike (`vehicleCount`, `averageSpeedKmh`) **se posodobijo**
-  v obstojecem dokumentu (`modifiedCount > 0`).
-- Nikoli ne brisemo zapisov - zgodovino ohranjamo.
-
-## Posiljanje scraper outputa v API (SCRUM-35)
-
-Ce scraper tece kot locen proces, naj ne pise direktno v MongoDB. Najprej
-ekstrahira normalizirane zapise, nato jih poslje na API endpoint:
-
-```js
-const { ScraperOutputApiClient } = require('./src/scraper');
-
-const client = new ScraperOutputApiClient({
-  apiBaseUrl: 'http://localhost:5000',
-  accessToken: '<JWT access token>',
-});
-
-await client.send(records, {
-  metadata: { source: 'traffic-counter-scraper' },
-});
-```
-
-Endpoint `POST /api/scraper/output` sprejme:
-
-```json
-{
-  "records": [
-    {
-      "sourceId": "dars-traffic-counters-sample",
-      "stationId": "LJ-001",
-      "stationName": "Ljubljana center",
-      "location": { "latitude": 46.0569, "longitude": 14.5058 },
-      "metrics": { "vehicleCount": 1000, "averageSpeedKmh": 40 },
-      "measuredAt": "2026-05-15T09:55:00.000Z",
-      "extractedAt": "2026-05-15T10:00:00.000Z"
-    }
-  ],
-  "metadata": { "source": "traffic-counter-scraper" }
-}
-```
-
-API vrne `202 Accepted` s summaryjem obstojecega ingestion pipeline-a.
+Za igrišča, kjer Nominatim ne vrne pravilnih koordinat (ali vrne napačne),
+dodaj vnos v `MANUAL_GEOCODE` mapo v `PlaygroundScraper.js`. Koordinate
+lahko dobiš z desnim klikom na OpenStreetMap → "Prikaži naslov".

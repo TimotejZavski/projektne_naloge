@@ -1,13 +1,14 @@
-const path = require('path');
+/**
+ * Viri za scraper — trenutno samo maribor.si javna igrišča.
+ */
 
 const sources = [
   {
-    id: 'dars-traffic-counters-sample',
-    name: 'DARS traffic counters sample',
-    type: 'json',
-    sourceType: 'fixture',
-    category: 'traffic',
-    fixturePath: path.join(__dirname, 'fixtures', 'traffic-counters.sample.json'),
+    id: "maribor-si-igrisca",
+    name: "Javna igrišča — Mestna občina Maribor",
+    url: "https://maribor.si/mestni-servis/otroci/javna-igrisca/",
+    type: "html",
+    category: "playground",
   },
 ];
 
@@ -15,6 +16,4 @@ function getSources() {
   return sources.map((source) => ({ ...source }));
 }
 
-module.exports = {
-  getSources,
-};
+module.exports = { getSources };

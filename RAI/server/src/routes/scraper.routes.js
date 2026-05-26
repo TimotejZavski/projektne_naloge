@@ -1,32 +1,20 @@
 /**
- * Scraper router (SCRUM-33) - mountan na `/api/scraper`.
+ * Scraper router — mountan na `/api/scraper`.
  *
- * Avtentikacija je zahtevana za vse poti (requireAuth).
- * `POST /run` v produkciji omeji controller na admin role-o.
+ *   POST /run           — sproži scrape igrišč
+ *   GET  /playgrounds   — vrne shranjena igrišča (javno, brez avtentikacije)
  */
 
-const express = require('express');
-
-const validate = require('../middleware/validate');
-const { requireAuth } = require('../middleware/auth');
+const express = require("express");
+const { requireAuth } = require("../middleware/auth");
 const {
-  runScraperSchema,
-  scraperOutputSchema,
-  listTrafficMeasurementsQuerySchema,
-} = require('../validators/scraper.validator');
-const ctrl = require('../controllers/scraper.controller');
+  runScraper,
+  listPlaygrounds,
+} = require("../controllers/scraper.controller");
 
 const router = express.Router();
 
-router.use(requireAuth);
-
-router.post('/run', validate(runScraperSchema), ctrl.runPipeline);
-router.post('/output', validate(scraperOutputSchema), ctrl.ingestOutput);
-router.get(
-  '/measurements',
-  validate(listTrafficMeasurementsQuerySchema, 'query'),
-  ctrl.listMeasurements
-);
-router.get('/stations', ctrl.listStations);
+router.post("/run", requireAuth, runScraper);
+router.get("/playgrounds", listPlaygrounds);
 
 module.exports = router;
