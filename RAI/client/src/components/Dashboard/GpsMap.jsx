@@ -1,18 +1,15 @@
 /**
- * GpsMap — Mapbox zemljevid z igrišči (javni API) in opcijsko GPS sledjo naprave.
- * Igrisca se prikazejo ob zagonu, neodvisno od prijave in izbrane naprave.
+ * GpsMap — OpenStreetMap (Leaflet) z igrišči in opcijsko GPS sledjo naprave.
  */
 
-import { useEffect, useMemo, useState } from "react";
-import Map, { Marker, Popup, Source, Layer, useMap } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   MapContainer,
   TileLayer,
   Polyline,
   CircleMarker,
   Tooltip,
-  useMap as useLeafletMap,
+  useMap,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -29,8 +26,33 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
-const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || "";
-const MB_CENTER = { longitude: 15.6459, latitude: 46.5547, zoom: 12 };
+const DEFAULT_CENTER = [46.5547, 15.6459];
+const OSM_TILES = {
+  url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  attribution:
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+};
+
+function toCoord(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function playgroundCoords(pg) {
+  const lat = toCoord(pg?.location?.latitude);
+  const lng = toCoord(pg?.location?.longitude);
+  if (lat == null || lng == null) return null;
+  return { lat, lng };
+}
+
+function normalizePlaygrounds(items) {
+  return (items || [])
+    .map((pg) => {
+      const coords = playgroundCoords(pg);
+      return coords ? { ...pg, coords } : null;
+    })
+    .filter(Boolean);
+}
 
 function fmtTime(iso) {
   if (!iso) return "—";
@@ -43,38 +65,33 @@ function fmtTime(iso) {
 
 function computeBounds(playgrounds, points) {
   const coords = [
-    ...playgrounds.map((pg) => [pg.location.longitude, pg.location.latitude]),
-    ...points.map((p) => [p.lng, p.lat]),
+    ...playgrounds.map((pg) => [pg.coords.lat, pg.coords.lng]),
+    ...points.map((p) => [p.lat, p.lng]),
   ];
   if (coords.length === 0) return null;
-  const lngs = coords.map((c) => c[0]);
-  const lats = coords.map((c) => c[1]);
-  return [
-    [Math.min(...lngs), Math.min(...lats)],
-    [Math.max(...lngs), Math.max(...lats)],
-  ];
+  return L.latLngBounds(coords);
 }
 
-function MapboxFitBounds({ bounds }) {
-  const { current: map } = useMap();
+function InvalidateSize() {
+  const map = useMap();
   useEffect(() => {
-    if (!map || !bounds) return;
-    map.fitBounds(bounds, { padding: 40, maxZoom: 15, duration: 800 });
-  }, [map, bounds]);
+    const fix = () => map.invalidateSize();
+    map.whenReady(fix);
+    const t = setTimeout(fix, 150);
+    return () => clearTimeout(t);
+  }, [map]);
   return null;
 }
 
-function LeafletFitBounds({ bounds }) {
-  const map = useLeafletMap();
+function FitBounds({ bounds }) {
+  const map = useMap();
   useEffect(() => {
-    if (!bounds) return;
-    const leafletBounds = L.latLngBounds([
-      [bounds[0][1], bounds[0][0]],
-      [bounds[1][1], bounds[1][0]],
-    ]);
-    if (leafletBounds.isValid()) {
-      map.fitBounds(leafletBounds, { padding: [40, 40], maxZoom: 15 });
-    }
+    if (!bounds?.isValid()) return;
+    const fit = () => {
+      map.invalidateSize();
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+    };
+    map.whenReady(fit);
   }, [bounds, map]);
   return null;
 }
@@ -86,6 +103,7 @@ function MapPanelHeader({
   gpsPointCount,
   playgroundError,
   gpsError,
+  mapError,
 }) {
   const heading = deviceId || "Javna igrišča";
   const subtitle = deviceId
@@ -118,93 +136,20 @@ function MapPanelHeader({
         {gpsError && (
           <p className="map-error-msg">Napaka pri nalaganju GPS sledi</p>
         )}
+        {mapError && (
+          <p className="map-error-msg">Napaka pri prikazu zemljevida</p>
+        )}
       </div>
     </div>
   );
 }
 
-function MapboxPlaygroundMap({ playgrounds, points, bounds }) {
-  const gpsLine = useMemo(() => {
-    if (points.length < 2) return null;
-    return {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "LineString",
-        coordinates: points.map((p) => [p.lng, p.lat]),
-      },
-    };
-  }, [points]);
-
-  return (
-    <Map
-      mapboxAccessToken={MAPBOX_TOKEN}
-      initialViewState={MB_CENTER}
-      style={{ width: "100%", height: "100%" }}
-      mapStyle="mapbox://styles/mapbox/light-v11"
-    >
-      {bounds && <MapboxFitBounds bounds={bounds} />}
-
-      {playgrounds.map((pg) => (
-        <Marker
-          key={pg._id || pg.name}
-          longitude={pg.location.longitude}
-          latitude={pg.location.latitude}
-          anchor="center"
-        >
-          <div className="playground-marker" title={pg.name} />
-          <Popup closeButton={false} offset={12}>
-            <div className="map-tooltip">
-              <strong>{pg.name}</strong>
-              <br />
-              {pg.address}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-
-      {gpsLine && (
-        <Source id="gps-track" type="geojson" data={gpsLine}>
-          <Layer
-            id="gps-track-line"
-            type="line"
-            paint={{
-              "line-color": "#1976d2",
-              "line-width": 4,
-              "line-opacity": 0.8,
-            }}
-          />
-        </Source>
-      )}
-
-      {points.map((p) => (
-        <Marker key={p.id} longitude={p.lng} latitude={p.lat} anchor="center">
-          <div className="gps-marker" />
-          <Popup closeButton={false} offset={10}>
-            <div className="map-tooltip">
-              <strong>{fmtTime(p.ts)}</strong>
-              <br />
-              {p.lat.toFixed(6)}, {p.lng.toFixed(6)}
-              {p.acc != null && (
-                <>
-                  <br />
-                  Točnost: {p.acc} m
-                </>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </Map>
-  );
-}
-
-function LeafletPlaygroundMap({ playgrounds, points, bounds }) {
+function OsmPlaygroundMap({ playgrounds, points, bounds }) {
   const gpsPositions = points.map((p) => [p.lat, p.lng]);
   const mapCenter =
     playgrounds.length > 0
-      ? [playgrounds[0].location.latitude, playgrounds[0].location.longitude]
-      : [MB_CENTER.latitude, MB_CENTER.longitude];
+      ? [playgrounds[0].coords.lat, playgrounds[0].coords.lng]
+      : DEFAULT_CENTER;
 
   return (
     <MapContainer
@@ -214,15 +159,17 @@ function LeafletPlaygroundMap({ playgrounds, points, bounds }) {
       scrollWheelZoom={true}
     >
       <TileLayer
-        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        attribution={OSM_TILES.attribution}
+        url={OSM_TILES.url}
+        maxZoom={19}
       />
-      {bounds && <LeafletFitBounds bounds={bounds} />}
+      <InvalidateSize />
+      {bounds && <FitBounds bounds={bounds} />}
 
       {playgrounds.map((pg) => (
         <CircleMarker
           key={pg._id || pg.name}
-          center={[pg.location.latitude, pg.location.longitude]}
+          center={[pg.coords.lat, pg.coords.lng]}
           radius={8}
           pathOptions={{
             color: "#21c98b",
@@ -280,12 +227,39 @@ function LeafletPlaygroundMap({ playgrounds, points, bounds }) {
   );
 }
 
+class MapErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(_error, _info) {
+    this.props.onError?.();
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="map-placeholder">
+          <span>Zemljevid trenutno ni na voljo</span>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function GpsMap({ deviceId }) {
   const [playgrounds, setPlaygrounds] = useState([]);
   const [playgroundError, setPlaygroundError] = useState(null);
   const [playgroundsLoading, setPlaygroundsLoading] = useState(true);
   const [points, setPoints] = useState([]);
   const [gpsError, setGpsError] = useState(null);
+  const [mapError, setMapError] = useState(false);
 
   useEffect(() => {
     let c = false;
@@ -293,11 +267,7 @@ export default function GpsMap({ deviceId }) {
     listPlaygrounds()
       .then((d) => {
         if (c) return;
-        const items = (d?.playgrounds || []).filter(
-          (pg) =>
-            pg.location?.latitude != null && pg.location?.longitude != null,
-        );
-        setPlaygrounds(items);
+        setPlaygrounds(normalizePlaygrounds(d?.playgrounds));
         setPlaygroundError(null);
       })
       .catch((e) => {
@@ -324,12 +294,13 @@ export default function GpsMap({ deviceId }) {
         const pts = (d?.measurements || [])
           .filter((m) => m.data?.latitude != null && m.data?.longitude != null)
           .map((m) => ({
-            lat: m.data.latitude,
-            lng: m.data.longitude,
+            lat: Number(m.data.latitude),
+            lng: Number(m.data.longitude),
             acc: m.data.accuracyMeters,
             ts: m.timestampUtc,
             id: m._id,
-          }));
+          }))
+          .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
         setPoints(pts);
         setGpsError(null);
       })
@@ -355,21 +326,18 @@ export default function GpsMap({ deviceId }) {
         gpsPointCount={points.length}
         playgroundError={playgroundError}
         gpsError={gpsError}
+        mapError={mapError}
       />
 
       <div className="map-wrapper">
-        {MAPBOX_TOKEN ? (
-          <MapboxPlaygroundMap
-            playgrounds={playgrounds}
-            points={points}
-            bounds={bounds}
-          />
-        ) : (
-          <LeafletPlaygroundMap
-            playgrounds={playgrounds}
-            points={points}
-            bounds={bounds}
-          />
+        {!playgroundsLoading && (
+          <MapErrorBoundary onError={() => setMapError(true)}>
+            <OsmPlaygroundMap
+              playgrounds={playgrounds}
+              points={points}
+              bounds={bounds}
+            />
+          </MapErrorBoundary>
         )}
       </div>
     </div>

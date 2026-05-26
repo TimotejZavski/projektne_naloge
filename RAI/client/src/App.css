@@ -680,13 +680,16 @@ h2 {
 
 .map-wrapper {
     height: 380px;
+    position: relative;
     width: 100%;
 }
 
-.leaflet-map,
-.map-wrapper .mapboxgl-map {
+.map-wrapper .leaflet-container,
+.leaflet-map {
+    background: #dfe9f5;
     height: 100%;
     width: 100%;
+    z-index: 0;
 }
 
 .playground-marker {

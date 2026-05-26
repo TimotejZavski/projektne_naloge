@@ -31,9 +31,36 @@ function createApp() {
   // ------------------------------------------------------------------
   // Globalna varnost
   // ------------------------------------------------------------------
-  // Helmet: postavi vrsto HTTP varnostnih headerjev (X-Frame-Options,
-  // X-Content-Type-Options, Strict-Transport-Security, ...).
-  app.use(helmet());
+  // Helmet: varnostni headerji. CSP mora dovoliti zunanje tile streznike za zemljevid
+  // (Leaflet/CARTO, OSM, Mapbox) — privzeti img-src 'self' sicer blokira ploščice.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: [
+            "'self'",
+            "data:",
+            "blob:",
+            "https://*.basemaps.cartocdn.com",
+            "https://tile.openstreetmap.org",
+            "https://*.mapbox.com",
+          ],
+          connectSrc: [
+            "'self'",
+            "https://api.mapbox.com",
+            "https://events.mapbox.com",
+            "https://*.mapbox.com",
+          ],
+          workerSrc: ["'self'", "blob:"],
+          childSrc: ["blob:"],
+          fontSrc: ["'self'", "data:"],
+        },
+      },
+    }),
+  );
 
   // CORS: dovoli zgolj eksplicitno navedene origin-e iz `.env`.
   // Wildcard `*` ne sme biti v produkciji ker razbije cookies + credentials.
