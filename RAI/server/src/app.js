@@ -5,6 +5,7 @@
  * `app` brez `app.listen()` in ga uporabimo s supertest.
  */
 
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
@@ -22,8 +23,8 @@ const { generalLimiter } = require("./middleware/rateLimiter");
 function createApp() {
   const app = express();
 
-  // Zaupaj prvemu proxy-ju (CRA dev proxy posilja X-Forwarded-For)
-  if (env.NODE_ENV !== "production") {
+  // Zaupaj prvemu proxy-ju (CRA dev proxy, Render/load balancer)
+  if (env.NODE_ENV !== "production" || process.env.RENDER) {
     app.set("trust proxy", 1);
   }
 
@@ -98,13 +99,15 @@ function createApp() {
   app.use("/api", routes);
 
   // ------------------------------------------------------------------
-  // Static files (React build) - samo v produkciji
+  // Static files (React build) - ce obstaja (Docker/Render image)
   // ------------------------------------------------------------------
-  if (env.NODE_ENV === "production") {
-    const clientBuild = path.join(__dirname, "..", "client", "build");
+  const clientBuild = path.join(__dirname, "..", "client", "build");
+  const clientIndex = path.join(clientBuild, "index.html");
+  if (fs.existsSync(clientIndex)) {
     app.use(express.static(clientBuild));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(clientBuild, "index.html"));
+    app.get("*", (req, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") return next();
+      res.sendFile(clientIndex);
     });
   }
 

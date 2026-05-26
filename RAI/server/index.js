@@ -29,8 +29,19 @@ async function start() {
       console.log(`[server] NODE_ENV=${env.NODE_ENV}`);
     });
 
-    // Zaženi MQTT listener
-    try {
+    // Zaženi MQTT listener (opcijsko; na Render brez brokerja nastavi MQTT_ENABLED=false)
+    const isDefaultLocalBroker =
+      env.MQTT_BROKER_URL === "mqtt://localhost:1883";
+    const skipMqtt =
+      !env.MQTT_ENABLED ||
+      (isDefaultLocalBroker &&
+        (env.NODE_ENV === "production" || process.env.RENDER));
+    if (skipMqtt) {
+      if (isDefaultLocalBroker && process.env.RENDER) {
+        console.log("[server] MQTT skipped (Render, no MQTT_BROKER_URL set)");
+      }
+    } else {
+      try {
       mqttListener = new MqttListener();
       await mqttListener.connect();
       // eslint-disable-next-line no-console
@@ -40,10 +51,14 @@ async function start() {
       setInterval(() => {
         mqttListener.cleanDeduplicationCache();
       }, 5 * 60 * 1000);
-    } catch (mqttErr) {
-      // eslint-disable-next-line no-console
-      console.warn('[server] MQTT listener failed to connect:', mqttErr.message);
-      // Ne prekini servera, samo opozori
+      } catch (mqttErr) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[server] MQTT listener failed to connect:",
+          mqttErr.message,
+        );
+        // Ne prekini servera, samo opozori
+      }
     }
 
     // Zaženi Data Aggregation Scheduler

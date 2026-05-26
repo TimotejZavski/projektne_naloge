@@ -9,6 +9,9 @@
 # Render config:
 #   Root Directory:  RAI
 #   Dockerfile Path: Dockerfile (oz. pusti ".")
+#   Env (Render dashboard): NODE_ENV=production, COOKIE_SECURE=true,
+#     CORS_ORIGINS=https://<your-service>.onrender.com
+#   MQTT: nastavi MQTT_BROKER_URL ali pusti (auto-skip na Render)
 # ============================================================
 
 ARG NODE_VERSION=22.12-alpine3.20

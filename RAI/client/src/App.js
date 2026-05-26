@@ -7,11 +7,6 @@ import DashboardPage from "./components/Dashboard/DashboardPage";
 import GpsMap from "./components/Dashboard/GpsMap";
 import DeviceLookup from "./components/DeviceLookup";
 
-const playground = {
-  name: "Smart Playground Center",
-  address: "Ljubljana, Slovenija",
-};
-
 function App() {
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
 

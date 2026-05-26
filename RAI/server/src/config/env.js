@@ -110,4 +110,7 @@ module.exports = {
   COOKIE_SAME_SITE: process.env.COOKIE_SAME_SITE || "lax",
 
   MQTT_BROKER_URL: process.env.MQTT_BROKER_URL || "mqtt://localhost:1883",
+
+  // false = ne poskusi MQTT povezave (npr. Render brez brokerja)
+  MQTT_ENABLED: toBool(process.env.MQTT_ENABLED, true),
 };
