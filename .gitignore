@@ -11,6 +11,7 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+SA/monitoring/monitoring.env
 coverage/
 .nyc_output/
 .cache/
