@@ -443,5 +443,5 @@ RAI/server/
 - [ ] Postavi `NODE_ENV=production`
 - [ ] Omeji `CORS_ORIGINS` na produkcijske domene
 - [ ] V firewallu (SCRUM-42) odpri samo 443 zunaj, 27017 (Mongo) in 1883 (MQTT) interno
-- [ ] Razmisli o IP-blocking pri Trojanskih `TOKEN_REUSE` dogodkih (alarm v monitoring SCRUM-43)
+- [ ] Razmisli o IP-blocking pri Trojanskih `TOKEN_REUSE` dogodkih (alarm v [`SA/monitoring/`](../../SA/monitoring/README.md) — SCRUM-43)
 - [ ] Backup `sessions` kolekcije ni potreben (TTL jih ciisti samodejno), backup `users` pa je obvezen

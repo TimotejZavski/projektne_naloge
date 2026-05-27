@@ -1,0 +1,20 @@
+# Monitoring cron — Smart Playgrounds (SCRUM-43)
+#
+# Namestitev:
+#   1. cp monitoring.env.example monitoring.env
+#   2. nastavi poti in opcijsko DISCORD_WEBHOOK_URL
+#   3. sudo touch /var/log/rai-monitor.log && sudo chmod 666 /var/log/rai-monitor.log
+#      (ali daj cron userju write dostop)
+#   4. crontab -e  — prilepi spodnje vrstice (popravi /path/to/repo)
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Health check vsakih 5 min (backend + Mongo + MQTT + docker)
+*/5 * * * * /path/to/repo/SA/monitoring/check-health.sh >> /var/log/rai-monitor.log 2>&1
+
+# Disk vsako uro
+0 * * * * /path/to/repo/SA/monitoring/check-disk.sh >> /var/log/rai-monitor.log 2>&1
+
+# MongoDB backup ob 02:00
+0 2 * * * /path/to/repo/SA/monitoring/backup-mongo.sh >> /var/log/rai-monitor.log 2>&1

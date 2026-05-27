@@ -42,7 +42,20 @@ Rok oddaje do	26. 4. 2026 ob 23:55:00
 
 Naloga je obvezna	Število oddaj: 0/3
 
+## Monitoring (SCRUM-43)
 
+Cron skripte za VPS: health check (`/health` + MQTT + Docker), disk alarm, dnevni Mongo backup.
+
+```bash
+cd SA/monitoring
+cp monitoring.env.example monitoring.env
+./check-health.sh
+crontab -e   # glej crontab.example
+```
+
+Podrobnosti: [`monitoring/README.md`](./monitoring/README.md). Na **Render** uporabi Health Checks + email alerts.
+
+---
 
 ## Avtomatizirana namestitev in zagon (SCRUM-38)
 
