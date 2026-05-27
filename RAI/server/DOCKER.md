@@ -306,9 +306,11 @@ Razvojni compose je **NE-PRIMEREN za produkcijo**. Za produkcijski deploy (SCRUM
 
 ### Monitoring (SCRUM-43)
 
-- Cron skripta vsakih 5 min preverja `curl -f http://localhost:5000/health`
-- E-poštno obvestilo ob napaki
-- Docker resource usage: `docker stats` ali Prometheus + Grafana
+Implementacija: [`SA/monitoring/`](../../SA/monitoring/README.md)
+
+- Cron `check-health.sh` vsakih 5 min (`curl -f /health`, Docker, MQTT)
+- `check-disk.sh` ob polnem disku, `backup-mongo.sh` ob 02:00
+- Render: Health Checks na `/health` + email alerts (brez cron-a)
 
 ---
 
