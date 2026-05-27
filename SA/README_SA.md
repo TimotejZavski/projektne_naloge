@@ -44,5 +44,63 @@ Naloga je obvezna	Število oddaj: 0/3
 
 
 
+## Avtomatizirana namestitev in zagon (SCRUM-38)
+
+Celoten lokalni stack (MongoDB + RAI backend + MQTT broker) se vzpostavi z enim ukazom.
+
+### Predpogoji
+
+- Docker Desktop (macOS/Windows) ali Docker Engine (Linux)
+- Prosti porti: `5000` (backend), `27017` (MongoDB), `1883` / `9001` (MQTT)
+
+### Hitri zagon
+
+```bash
+# iz korena repozitorija
+./SA/setup.sh
+
+# ali iz mape SA
+cd SA && ./setup.sh
+```
+
+`setup.sh` naredi:
+
+1. preveri Docker
+2. ustvari `.env` iz `.env.example` in generira JWT sekrete
+3. `docker compose up -d --build` (mongo + mosquitto + backend)
+4. pocaka na healthcheck vseh servisov
+5. inicializira MongoDB kolekcije (`RAI/database/init_script.js`, idempotentno)
+6. smoke test (`/health`, Mongo ping, MQTT subscribe)
+
+### Rocni zagon
+
+```bash
+cd SA
+cp .env.example .env          # nastavi JWT sekrete
+docker compose up -d --build
+docker compose ps
+curl http://localhost:5000/health
+```
+
+Ustavitev: `docker compose down` (podatki ostanejo) ali `docker compose down -v` (brise volumes).
+
+### Render (produkcija RAI)
+
+Render hosta samo RAI backend brez MQTT brokerja. Polni stack z MQTT tece lokalno ali na VPS preko `SA/setup.sh`. Na Render nastavi `MQTT_ENABLED=false`.
+
+### Datoteke
+
+| Datoteka | Namen |
+|---|---|
+| [`setup.sh`](./setup.sh) | glavni entry point |
+| [`docker-compose.yml`](./docker-compose.yml) | orchestrator: mongo + backend + mosquitto |
+| [`.env.example`](./.env.example) | predloga okoljskih spremenljivk |
+| [`scripts/init-env.sh`](./scripts/init-env.sh) | priprava `.env` |
+| [`scripts/wait-healthy.sh`](./scripts/wait-healthy.sh) | cakanje na healthcheck |
+| [`scripts/init-db.sh`](./scripts/init-db.sh) | inicializacija MongoDB |
+| [`scripts/smoke-test.sh`](./scripts/smoke-test.sh) | preverjanje delovanja |
+
+---
+
 opomba:
 tu pride Dockerfile, docker-compose.yml, GitHub Actions skripte (.github/workflows), nastavitve požarnega zidu (npr. iptables rules), skripte za namestitev (setup.sh), Jira exporte ipd.
