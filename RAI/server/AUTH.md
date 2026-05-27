@@ -442,6 +442,6 @@ RAI/server/
 - [ ] Razmisli o `COOKIE_SAME_SITE=strict` (strogo, brez cross-site GET-ov)
 - [ ] Postavi `NODE_ENV=production`
 - [ ] Omeji `CORS_ORIGINS` na produkcijske domene
-- [ ] V firewallu (SCRUM-42) odpri samo 443 zunaj, 27017 (Mongo) in 1883 (MQTT) interno
+- [ ] V firewallu ([`SA/firewall/README.md`](../../SA/firewall/README.md) — SCRUM-42) odpri samo 443/80 + SSH navzven; Mongo (27017) in MQTT (1883) interno preko Docker mreze
 - [ ] Razmisli o IP-blocking pri Trojanskih `TOKEN_REUSE` dogodkih (alarm v monitoring SCRUM-43)
 - [ ] Backup `sessions` kolekcije ni potreben (TTL jih ciisti samodejno), backup `users` pa je obvezen
