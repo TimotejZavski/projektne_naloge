@@ -5,19 +5,38 @@
 }
 
 .dashboard-header {
+    position: relative;
+    overflow: hidden;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1.25rem;
-    border: 1px solid #d9e2ef;
-    border-radius: 0.5rem;
-    background: #f8fafc;
+    padding: 1.6rem 1.5rem;
+    border-radius: var(--app-radius);
+    background: var(--app-brand-gradient);
+    box-shadow: var(--app-shadow);
+}
+
+.dashboard-header::after {
+    content: "";
+    position: absolute;
+    top: -45%;
+    right: -8%;
+    width: 16rem;
+    height: 16rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+    pointer-events: none;
+}
+
+.dashboard-header > * {
+    position: relative;
+    z-index: 1;
 }
 
 .dashboard-kicker {
     margin: 0 0 0.25rem;
-    color: #475569;
+    color: rgba(255, 255, 255, 0.78);
     font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -26,20 +45,47 @@
 
 .dashboard-header h1 {
     margin: 0;
-    color: #0f172a;
+    color: #ffffff;
     font-size: 2rem;
     font-weight: 750;
+    letter-spacing: -0.01em;
 }
 
 .dashboard-subtitle {
-    margin: 0.35rem 0 0;
-    color: #475569;
+    margin: 0.4rem 0 0;
+    color: rgba(255, 255, 255, 0.88);
+    max-width: 40rem;
 }
 
 .dashboard-actions {
     display: flex;
     flex: 0 0 auto;
     gap: 0.5rem;
+}
+
+.dashboard-header .btn-primary {
+    color: var(--app-primary-strong);
+    background-color: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 8px 18px -10px rgba(15, 23, 42, 0.5);
+}
+
+.dashboard-header .btn-primary:hover {
+    color: var(--app-primary-strong);
+    background-color: #f1f5ff;
+    border-color: #f1f5ff;
+}
+
+.dashboard-header .btn-outline-primary {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-header .btn-outline-primary:hover {
+    color: var(--app-primary-strong);
+    background-color: #ffffff;
+    border-color: #ffffff;
 }
 
 .dashboard-summary {
@@ -60,16 +106,27 @@
 .dashboard-summary-card,
 .dashboard-panel,
 .dashboard-device-card {
-    border: 1px solid #d9e2ef;
-    border-radius: 0.5rem;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
     background: #ffffff;
+    box-shadow: var(--app-shadow);
 }
 
 .dashboard-summary-card {
+    position: relative;
     display: grid;
     gap: 0.3rem;
     min-height: 5.5rem;
-    padding: 1rem;
+    padding: 1rem 1rem 1rem 1.15rem;
+    overflow: hidden;
+}
+
+.dashboard-summary-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: var(--app-brand-gradient);
 }
 
 .dashboard-summary-label {
@@ -81,8 +138,8 @@
 }
 
 .dashboard-summary-card strong {
-    color: #0f172a;
-    font-size: 1.55rem;
+    color: var(--app-primary-strong);
+    font-size: 1.6rem;
     line-height: 1.1;
 }
 
@@ -129,7 +186,14 @@
 .dashboard-device-card {
     display: grid;
     gap: 1rem;
-    padding: 1rem;
+    padding: 1.1rem;
+    transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.dashboard-device-card:hover {
+    border-color: #bfd3f6;
+    box-shadow: var(--app-shadow-hover);
+    transform: translateY(-2px);
 }
 
 .dashboard-device-card-header {

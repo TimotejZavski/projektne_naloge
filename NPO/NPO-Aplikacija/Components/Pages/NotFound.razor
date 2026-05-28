@@ -1,5 +1,16 @@
 ﻿@page "/not-found"
 @layout MainLayout
 
-<h3>Not Found</h3>
-<p>Sorry, the content you are looking for does not exist.</p>
+<PageTitle>Strani ni mogoče najti</PageTitle>
+
+<div class="notfound">
+    <svg class="notfound__mark" viewBox="0 0 456 456" width="76" height="76" aria-hidden="true">
+        <path d="M228 124 C 286 124 326 166 326 220 C 326 280 252 316 228 332 C 204 316 130 280 130 220 C 130 166 170 124 228 124 Z" fill="#2563eb" />
+        <circle cx="228" cy="216" r="46" fill="#22c55e" />
+        <circle cx="228" cy="216" r="18" fill="#ffffff" />
+    </svg>
+    <p class="notfound__code">404</p>
+    <h1>Strani ni mogoče najti</h1>
+    <p class="notfound__lead">Iskana vsebina ne obstaja ali je bila premaknjena.</p>
+    <a class="btn btn-primary" href="">Nazaj na začetno stran</a>
+</div>

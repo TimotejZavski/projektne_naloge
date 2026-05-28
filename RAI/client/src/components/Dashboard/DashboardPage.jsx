@@ -106,7 +106,7 @@ export default function DashboardPage({ onDeviceChange }) {
 
       {!deviceId ? (
         <div className="chart-message chart-message--empty">
-          <p>Izberi napravo za prikaz meritev.</p>
+          <p>Izberite napravo — graf prikaže meritve z mobilne aplikacije na igrišču.</p>
         </div>
       ) : (
         <TimeSeriesChart
