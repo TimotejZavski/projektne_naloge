@@ -1,5 +1,7 @@
 const { setupTestDb, clearTestDb, teardownTestDb } = require('./setup');
 
+jest.mock('mqtt', () => ({ connect: jest.fn() }), { virtual: true });
+
 jest.setTimeout(120000);
 
 let Device;
