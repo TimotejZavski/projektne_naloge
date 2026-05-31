@@ -34,11 +34,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: RAI/server/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run server tests
         run: npm test
@@ -58,11 +56,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: RAI/client/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run client tests
         run: npm test
@@ -112,7 +108,7 @@ jobs:
         run: dotnet workload install maui
 
       - name: Restore NPO project
-        run: dotnet restore NPO\NPO-Aplikacija\NPO-Aplikacija.csproj -f net10.0-windows10.0.19041.0
+        run: dotnet restore NPO\NPO-Aplikacija\NPO-Aplikacija.csproj -p:TargetFramework=net10.0-windows10.0.19041.0
 
       - name: Build NPO Windows target
         run: dotnet build NPO\NPO-Aplikacija\NPO-Aplikacija.csproj -f net10.0-windows10.0.19041.0 --no-restore
