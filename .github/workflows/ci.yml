@@ -117,3 +117,17 @@ jobs:
 
       - name: Build NPO Windows target
         run: dotnet build NPO\NPO-Aplikacija\NPO-Aplikacija.csproj -f net10.0-windows10.0.19041.0 --no-restore
+
+  docker-builds:
+    name: Docker build checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build RAI image
+        run: docker build -t smart-playgrounds-rai:ci RAI
+
+      - name: Build backup image
+        run: docker build -t smart-playgrounds-backup:ci SA/backup
