@@ -11,7 +11,10 @@ public sealed record MqttSensorMessage(
 
 public sealed record MqttGpsPayload(
     [property: JsonPropertyName("latitude")] double Latitude,
-    [property: JsonPropertyName("longitude")] double Longitude);
+    [property: JsonPropertyName("longitude")] double Longitude,
+    [property: JsonPropertyName("accuracyMeters")]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? AccuracyMeters = null);
 
 public sealed record MqttAccelerometerPayload(
     [property: JsonPropertyName("x")] double X,

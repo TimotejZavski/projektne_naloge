@@ -28,5 +28,7 @@
     </array>
     <key>XSAppIconAssets</key>
     <string>Assets.xcassets/appicon.appiconset</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Aplikacija uporablja lokacijo za posiljanje GPS meritev v nadzorno plosco.</string>
 </dict>
 </plist>

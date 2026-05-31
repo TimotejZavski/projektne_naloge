@@ -40,7 +40,10 @@ public static class MqttSensorMessageFactory
 
     private static object BuildPayload(SensorData sensorData) => sensorData switch
     {
-        GPSData gpsData => new MqttGpsPayload(gpsData.Latitude, gpsData.Longitude),
+        GPSData gpsData => new MqttGpsPayload(
+            gpsData.Latitude,
+            gpsData.Longitude,
+            gpsData.AccuracyMeters),
         NPO_Aplikacija.Models.AccelerometerData accelerometerData => new MqttAccelerometerPayload(
             accelerometerData.X,
             accelerometerData.Y,
