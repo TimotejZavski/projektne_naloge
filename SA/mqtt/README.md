@@ -96,14 +96,14 @@ preko `docker exec`):
 
 ```bash
 docker exec -it smart-playgrounds-mqtt \
-  mosquitto_sub -h localhost -t "devices/test-azur/sensors/+" -v
+  mosquitto_sub -h localhost -t "smart-playgrounds/devices/test-azur/sensors/+" -v
 ```
 
 **V drugem oknu objavi testno meritev:**
 
 ```bash
 docker exec -it smart-playgrounds-mqtt \
-  mosquitto_pub -h localhost -t "devices/test-azur/sensors/gps" -m '{
+  mosquitto_pub -h localhost -t "smart-playgrounds/devices/test-azur/sensors/gps" -m '{
     "schemaVersion": "1.0",
     "deviceId": "test-azur",
     "sensorType": "gps",
@@ -132,9 +132,9 @@ povezave nastaviti **Last Will** sporocilo (glej `topics.md`, poglavje 5).
 V `RAI/server/` (SCRUM-20) bo MQTT subscriber poslusal:
 
 ```
-devices/+/sensors/gps
-devices/+/sensors/accelerometer
-devices/+/status/#
+smart-playgrounds/devices/+/sensors/gps
+smart-playgrounds/devices/+/sensors/accelerometer
+smart-playgrounds/devices/+/status/#
 ```
 
 in vpisoval prejete meritve v MongoDB kolekcijo `sensor_measurements`

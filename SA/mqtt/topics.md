@@ -11,8 +11,12 @@ NPO (publisher), RAI (consumer) in SA (broker).
 ## 1. Konvencija imenovanja
 
 ```
-<domena>/<entiteta>/<podtip>/<akcija>
+smart-playgrounds/<entiteta>/<podtip>/<akcija>
 ```
+
+Vsi topici se zacnejo s **`smart-playgrounds/`** prefiksom. To je
+projektni namespace — ce kdaj delimo broker z drugim sistemom, nasa
+sporocila ostanejo izolirana.
 
 Pravila:
 
@@ -27,21 +31,21 @@ Pravila:
 
 | Topic | Smer | QoS | Retain | Format payloada | Opis |
 |---|---|---|---|---|---|
-| `devices/<deviceId>/sensors/gps` | NPO -> backend | 1 | ne | `sensor-measurement.schema.json` (sensorType=`gps`) | GPS meritev |
-| `devices/<deviceId>/sensors/accelerometer` | NPO -> backend | 0 | ne | `sensor-measurement.schema.json` (sensorType=`accelerometer`) | Pospeskomer meritev |
-| `devices/<deviceId>/status/online` | NPO -> backend | 1 | da | `{ "online": true, "timestampUtc": "..." }` | Heartbeat (Last Will: `{ "online": false }`) |
-| `devices/<deviceId>/status/connect` | NPO -> backend | 1 | ne | `{ "platform": "Android\|iOS\|Windows", "appVersion": "..." }` | Naprava se je povezala |
-| `system/broker/status` | broker -> nadzor | 0 | da | `{ "status": "up", "since": "..." }` | Zdravje brokerja (objavlja monitoring skripta) |
-| `analytics/playground/<playgroundId>/occupancy` | backend -> spletni klient | 1 | da | `{ "uniqueDevices": <n>, "windowSec": 60 }` | Real-time stevec aktivnih naprav okoli igrisca |
+| `smart-playgrounds/devices/<deviceId>/sensors/gps` | NPO -> backend | 1 | ne | `sensor-measurement.schema.json` (sensorType=`gps`) | GPS meritev |
+| `smart-playgrounds/devices/<deviceId>/sensors/accelerometer` | NPO -> backend | 0 | ne | `sensor-measurement.schema.json` (sensorType=`accelerometer`) | Pospeskomer meritev |
+| `smart-playgrounds/devices/<deviceId>/status/online` | NPO -> backend | 1 | da | `{ "online": true, "timestampUtc": "..." }` | Heartbeat (Last Will: `{ "online": false }`) |
+| `smart-playgrounds/devices/<deviceId>/status/connect` | NPO -> backend | 1 | ne | `{ "platform": "Android\|iOS\|Windows", "appVersion": "..." }` | Naprava se je povezala |
+| `smart-playgrounds/system/broker/status` | broker -> nadzor | 0 | da | `{ "status": "up", "since": "..." }` | Zdravje brokerja (objavlja monitoring skripta) |
+| `smart-playgrounds/analytics/playground/<playgroundId>/occupancy` | backend -> spletni klient | 1 | da | `{ "uniqueDevices": <n>, "windowSec": 60 }` | Real-time stevec aktivnih naprav okoli igrisca |
 
 ## 3. Primeri konkretnih topicev
 
 ```
-devices/phone-azur-pixel8/sensors/gps
-devices/phone-azur-pixel8/sensors/accelerometer
-devices/phone-azur-pixel8/status/online
-analytics/playground/65fa1c9b3e0e8a7d2c3a9e14/occupancy
-system/broker/status
+smart-playgrounds/devices/phone-azur-pixel8/sensors/gps
+smart-playgrounds/devices/phone-azur-pixel8/sensors/accelerometer
+smart-playgrounds/devices/phone-azur-pixel8/status/online
+smart-playgrounds/analytics/playground/65fa1c9b3e0e8a7d2c3a9e14/occupancy
+smart-playgrounds/system/broker/status
 ```
 
 ## 4. QoS razlogi (zakaj)
@@ -57,7 +61,7 @@ Mobilna aplikacija ob povezavi s brokerjem nastavi LWT:
 
 ```json
 {
-  "topic":   "devices/<deviceId>/status/online",
+  "topic":   "smart-playgrounds/devices/<deviceId>/status/online",
   "payload": "{ \"online\": false, \"reason\": \"unexpected-disconnect\" }",
   "qos":     1,
   "retain":  true
@@ -72,18 +76,20 @@ Backend ta dogodek upostevi pri stetju trenutno povezanih naprav
 
 | Naroci | Pomen |
 |---|---|
-| `devices/+/sensors/gps` | vse GPS meritve vseh naprav (uporablja backend ingestion) |
-| `devices/+/sensors/+` | vsi senzorji vseh naprav (samo za debug/dev orodja) |
-| `devices/+/status/#` | vsa status sporocila vseh naprav (uporablja "kdo je online") |
-| `analytics/#` | vsi izvedeni analiticni topici (uporablja spletni dashboard) |
+| `smart-playgrounds/devices/+/sensors/gps` | vse GPS meritve vseh naprav (uporablja backend ingestion) |
+| `smart-playgrounds/devices/+/sensors/+` | vsi senzorji vseh naprav (samo za debug/dev orodja) |
+| `smart-playgrounds/devices/+/status/#` | vsa status sporocila vseh naprav (uporablja "kdo je online") |
+| `smart-playgrounds/analytics/#` | vsi izvedeni analiticni topici (uporablja spletni dashboard) |
 
-## 7. Rezervirani prefiksi
+## 7. Rezervirani podprefiksi
 
-Naslednje prefikse hranimo za prihodnje uporabe — ne uporabljajte jih za druge namene:
+Vsi topici se zacnejo s `smart-playgrounds/`. Znotraj tega namespace-a
+hranimo naslednje podprefikse za prihodnje uporabe — ne uporabljajte
+jih za druge namene:
 
-- `system/...` — interna sporocila brokerja in monitoring skripte (SCRUM-43)
-- `analytics/...` — izhodi obdelovalnih cevovodov (poglavje 4 v `er-model.md`)
-- `commands/...` — ukazi proti napravam (npr. povecaj frekvenco vzorcenja)
+- `smart-playgrounds/system/...` — interna sporocila brokerja in monitoring skripte (SCRUM-43)
+- `smart-playgrounds/analytics/...` — izhodi obdelovalnih cevovodov (poglavje 4 v `er-model.md`)
+- `smart-playgrounds/commands/...` — ukazi proti napravam (npr. povecaj frekvenco vzorcenja)
 
 ## 8. Sklic
 
