@@ -5,19 +5,19 @@
 # Uporabniki se ustvarijo z mosquitto_passwd v datoteki passwd.
 
 user npo-publisher
-topic write devices/+/sensors/+
-topic write devices/+/status/+
-topic read system/broker/status
+topic write smart-playgrounds/devices/+/sensors/+
+topic write smart-playgrounds/devices/+/status/+
+topic read smart-playgrounds/system/broker/status
 
 user rai-consumer
-topic read devices/+/sensors/+
-topic read devices/+/status/#
-topic write analytics/#
+topic read smart-playgrounds/devices/+/sensors/+
+topic read smart-playgrounds/devices/+/status/#
+topic write smart-playgrounds/analytics/#
 
 user monitoring
 topic read $SYS/#
-topic write system/broker/status
+topic write smart-playgrounds/system/broker/status
 
 user web-dashboard
-topic read analytics/#
-topic read system/broker/status
+topic read smart-playgrounds/analytics/#
+topic read smart-playgrounds/system/broker/status
