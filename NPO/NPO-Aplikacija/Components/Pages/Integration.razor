@@ -1,0 +1,129 @@
+@page "/integration"
+@inject IRaiIntegrationClient RaiIntegrationClient
+@inject ISensorDataRepository SensorDataRepository
+@inject IDeviceIdentityProvider DeviceIdentityProvider
+
+<PageTitle>Integracija</PageTitle>
+
+<div class="integration-page">
+    <section class="integration-header">
+        <div>
+            <p class="integration-kicker">Sistemska povezava</p>
+            <h1>Integracija</h1>
+            <p>Preverjanje povezave aplikacije z zalednim sistemom in rocni prenos lokalnih meritev.</p>
+        </div>
+    </section>
+
+    <section class="integration-panel">
+        <div class="integration-panel-header">
+            <div>
+                <h2>Povezava z zaledjem</h2>
+                <p>Naprava uporablja isti identifikator za MQTT in HTTP tok meritev.</p>
+            </div>
+            <span class="integration-badge">@DeviceIdentityProvider.DeviceId</span>
+        </div>
+
+        <dl class="integration-grid">
+            <div>
+                <dt>Platforma</dt>
+                <dd>@DeviceIdentityProvider.Platform</dd>
+            </div>
+            <div>
+                <dt>Razlicica aplikacije</dt>
+                <dd>@DeviceIdentityProvider.AppVersion</dd>
+            </div>
+            <div>
+                <dt>Status</dt>
+                <dd>@statusText</dd>
+            </div>
+            <div>
+                <dt>Lokalne meritve</dt>
+                <dd>@localMeasurementCount</dd>
+            </div>
+        </dl>
+
+        @if (!string.IsNullOrWhiteSpace(message))
+        {
+            <div class="@messageClass" role="status">@message</div>
+        }
+
+        <div class="integration-actions">
+            <button class="btn btn-primary" @onclick="CheckHealthAsync" disabled="@isBusy">Preveri povezavo</button>
+            <button class="btn btn-secondary" @onclick="RegisterDeviceAsync" disabled="@isBusy">Registriraj napravo</button>
+            <button class="btn btn-secondary" @onclick="SyncMeasurementsAsync" disabled="@isBusy">Poslji meritve</button>
+        </div>
+    </section>
+</div>
+
+@code {
+    private bool isBusy;
+    private int localMeasurementCount;
+    private string statusText = "Ni preverjeno";
+    private string? message;
+    private string messageClass = "integration-message";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshLocalCountAsync();
+    }
+
+    private async Task CheckHealthAsync()
+    {
+        await RunAsync(async () =>
+        {
+            var status = await RaiIntegrationClient.CheckHealthAsync();
+            statusText = status.IsReachable ? "Dosegljivo" : "Nedosegljivo";
+            SetMessage(status.Message, status.IsReachable);
+        });
+    }
+
+    private async Task RegisterDeviceAsync()
+    {
+        await RunAsync(async () =>
+        {
+            var registered = await RaiIntegrationClient.RegisterDeviceAsync();
+            SetMessage(
+                registered ? "Naprava je registrirana v zaledju." : "Naprave ni bilo mogoce registrirati.",
+                registered);
+        });
+    }
+
+    private async Task SyncMeasurementsAsync()
+    {
+        await RunAsync(async () =>
+        {
+            var measurements = await SensorDataRepository.GetAllAsync();
+            var result = await RaiIntegrationClient.SendMeasurementsAsync(measurements);
+            SetMessage($"{result.Message} Poslano: {result.SentCount}, zavrnjeno: {result.RejectedCount}.", result.Success);
+        });
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        isBusy = true;
+        message = null;
+
+        try
+        {
+            await action();
+            await RefreshLocalCountAsync();
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task RefreshLocalCountAsync()
+    {
+        localMeasurementCount = (await SensorDataRepository.GetAllAsync()).Count;
+    }
+
+    private void SetMessage(string value, bool success)
+    {
+        message = value;
+        messageClass = success
+            ? "integration-message integration-message--success"
+            : "integration-message integration-message--warning";
+    }
+}
