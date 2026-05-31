@@ -97,6 +97,11 @@ Topic format:
 smart-playgrounds/devices/{deviceId}/sensors/{sensorType}
 ```
 
+GPS zajem najprej poskusi prebrati dejansko lokacijo naprave prek MAUI
+geolokacije. Ce lokacija v razvojnem okolju ni na voljo, aplikacija uporabi
+varen nadomestni koordinatni par, da MQTT tok in RAI integracija ostaneta
+preverljiva tudi na emulatorju ali namizju brez vklopljene lokacije.
+
 ## SCRUM-27 Dashboard view
 
 NPO aplikacija ima dashboard na zacetni poti `/` in dodatni poti `/dashboard`.
