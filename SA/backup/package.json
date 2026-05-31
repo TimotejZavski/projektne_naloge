@@ -1,0 +1,24 @@
+{
+  "name": "sa-backup",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MongoDB backup service for Smart Playgrounds (SCRUM-44). Daily mongodump --archive --gzip with 7-day retention.",
+  "main": "src/backup.js",
+  "scripts": {
+    "test": "jest --colors",
+    "test:watch": "jest --watch"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ],
+    "clearMocks": true,
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ]
+  }
+}
