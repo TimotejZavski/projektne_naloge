@@ -19,11 +19,13 @@ public sealed class MqttSensorPublisher : IMqttSensorPublisher
     private readonly int _port;
     private readonly string _baseTopic;
 
-    public MqttSensorPublisher(ILogger<MqttSensorPublisher> logger)
+    public MqttSensorPublisher(
+        ILogger<MqttSensorPublisher> logger,
+        IDeviceIdentityProvider deviceIdentityProvider)
     {
         _logger = logger;
-        _deviceId = NormalizeDeviceId(Environment.MachineName);
-        _clientId = $"npo-{_deviceId}";
+        _deviceId = deviceIdentityProvider.DeviceId;
+        _clientId = deviceIdentityProvider.ClientId;
         _host = "localhost";
         _port = 1883;
         _baseTopic = "smart-playgrounds";
@@ -138,15 +140,4 @@ public sealed class MqttSensorPublisher : IMqttSensorPublisher
         while (length > 0);
     }
 
-    private static string NormalizeDeviceId(string value)
-    {
-        var builder = new StringBuilder();
-
-        foreach (var character in value.ToLowerInvariant())
-        {
-            builder.Append(char.IsLetterOrDigit(character) ? character : '-');
-        }
-
-        return builder.ToString().Trim('-');
-    }
 }

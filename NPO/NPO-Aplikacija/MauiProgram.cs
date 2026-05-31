@@ -20,6 +20,7 @@ namespace NPO_Aplikacija
             // Registracija senzorskih storitev
             builder.Services.AddSingleton<IGPSSensor, GPSSensor>();
             builder.Services.AddSingleton<IAccelerometerSensor, AccelerometerSensor>();
+            builder.Services.AddSingleton<IDeviceIdentityProvider, DeviceIdentityProvider>();
             builder.Services.AddSingleton<ISensorService, SensorService>();
             builder.Services.AddSingleton<ISensorDataRepository, SensorDataRepository>();
             builder.Services.AddSingleton<IMqttSensorPublisher, MqttSensorPublisher>();
