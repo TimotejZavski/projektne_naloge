@@ -1,0 +1,17 @@
+# Override that attaches the backup service to the rai-network created
+# by RAI/server/docker-compose.yml so it can reach the local dev mongo
+# at the 'mongo' service name.
+#
+# Use together with the base compose:
+#   docker compose -f SA/backup/docker-compose.yml \
+#                  -f SA/backup/docker-compose.local-mongo.yml up -d
+
+services:
+  backup:
+    networks:
+      - rai-network
+
+networks:
+  rai-network:
+    external: true
+    name: rai-network
