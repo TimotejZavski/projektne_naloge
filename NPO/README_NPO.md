@@ -147,7 +147,8 @@ Primer GPS sporočila:
   "timestampUtc": "2026-05-08T12:00:00Z",
   "data": {
     "latitude": 46.5547,
-    "longitude": 15.6459
+    "longitude": 15.6459,
+    "accuracyMeters": 8.5
   }
 }
 ```
