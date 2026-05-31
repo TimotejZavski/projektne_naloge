@@ -197,20 +197,21 @@ public sealed class RaiIntegrationClient : IRaiIntegrationClient
     };
 
     private sealed record RaiDeviceRegistrationRequest(
-        string DeviceId,
-        string Name,
-        string Platform,
-        string AppVersion);
+        [property: JsonPropertyName("deviceId")] string DeviceId,
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("platform")] string Platform,
+        [property: JsonPropertyName("appVersion")] string AppVersion);
 
     private sealed record RaiBatchMeasurementsRequest(
+        [property: JsonPropertyName("measurements")]
         IReadOnlyCollection<RaiMeasurementRequest> Measurements);
 
     private sealed record RaiMeasurementRequest(
-        string SchemaVersion,
-        string DeviceId,
-        string SensorType,
-        DateTime TimestampUtc,
-        object Data);
+        [property: JsonPropertyName("schemaVersion")] string SchemaVersion,
+        [property: JsonPropertyName("deviceId")] string DeviceId,
+        [property: JsonPropertyName("sensorType")] string SensorType,
+        [property: JsonPropertyName("timestampUtc")] DateTime TimestampUtc,
+        [property: JsonPropertyName("data")] object Data);
 
     private sealed record RaiBatchResponse(
         [property: JsonPropertyName("insertedCount")] int InsertedCount,
