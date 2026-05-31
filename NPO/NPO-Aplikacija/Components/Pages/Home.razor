@@ -4,19 +4,20 @@
 @inject ISensorDataRepository SensorDataRepository
 @implements IAsyncDisposable
 
-<PageTitle>Dashboard</PageTitle>
+<PageTitle>Na igrišču</PageTitle>
 
 <div class="dashboard-page">
     <section class="dashboard-header">
         <div>
-            <p class="dashboard-kicker">NPO pregled</p>
-            <h1>Dashboard</h1>
-            <p class="dashboard-subtitle">Pregled vseh povezanih naprav in zadnjih zajetih meritev.</p>
+            <p class="dashboard-kicker">Smart Playgrounds</p>
+            <h1>Na igrišču</h1>
+            <p class="dashboard-subtitle">Telefon zajema lokacijo in gibanje na igrišču. Podatki se pošiljajo prek MQTT in so vidni na spletni nadzorni plošči.</p>
         </div>
 
         <div class="dashboard-actions">
+            <a class="btn btn-outline-primary" href="sensors">Meritve v živo</a>
             <button class="btn btn-primary" @onclick="RefreshAsync" disabled="@isLoading">
-                @(isLoading ? "Osvezujem..." : "Osvezi")
+                @(isLoading ? "Osvežujem…" : "Osveži")
             </button>
         </div>
     </section>
@@ -34,7 +35,7 @@
             <strong>@deviceRows.Count</strong>
         </div>
         <div class="dashboard-summary-card">
-            <span class="dashboard-summary-label">Aktivne naprave</span>
+            <span class="dashboard-summary-label">Aktivni senzorji</span>
             <strong>@activeDeviceCount</strong>
         </div>
         <div class="dashboard-summary-card">
@@ -50,15 +51,15 @@
     <section class="dashboard-panel">
         <div class="dashboard-panel-header">
             <div>
-                <h2>Vse naprave</h2>
-                <p>Stanje naprav, zadnja meritev in stevilo lokalno zajetih vzorcev.</p>
+                <h2>Senzorji</h2>
+                <p>Lokacija in gibanje na igrišču — zadnja meritev in število lokalno shranjenih vzorcev.</p>
             </div>
             <span class="dashboard-count">@DeviceCountLabel</span>
         </div>
 
         @if (isLoading && !deviceRows.Any())
         {
-            <div class="dashboard-empty">Nalagam dashboard podatke...</div>
+            <div class="dashboard-empty">Nalagam podatke…</div>
         }
         else
         {
@@ -82,7 +83,7 @@
                                 <dd>@device.LastReading</dd>
                             </div>
                             <div>
-                                <dt>Cas meritve</dt>
+                                <dt>Čas meritve</dt>
                                 <dd>@device.LastUpdated</dd>
                             </div>
                             <div>
@@ -106,7 +107,7 @@
 
         @if (!recentReadings.Any())
         {
-            <div class="dashboard-empty">Meritve se bodo prikazale po prvem zajemu podatkov.</div>
+            <div class="dashboard-empty">Začnite zajem na igrišču — meritve se bodo prikazale tukaj in na spletni nadzorni plošči.</div>
         }
         else
         {
@@ -164,7 +165,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Dashboard podatkov ni bilo mogoce osveziti: {ex.Message}";
+            errorMessage = $"Podatkov ni bilo mogoče osvežiti: {ex.Message}";
         }
         finally
         {
@@ -198,15 +199,15 @@
         deviceRows =
         [
             new DeviceDashboardRow(
-                "GPS naprava",
                 "Lokacija",
+                "GPS na igrišču",
                 SensorService.GPSSensor.IsActive,
                 latestGps is null ? "Ni podatkov" : $"{latestGps.Latitude:F4}, {latestGps.Longitude:F4}",
                 latestGps is null ? "Ni podatkov" : FormatTimestamp(latestGps.Timestamp),
                 gpsReadings.Length),
             new DeviceDashboardRow(
-                "Merilnik pospeska",
                 "Gibanje",
+                "Pospeškometer",
                 SensorService.AccelerometerSensor.IsActive,
                 latestAccelerometer is null ? "Ni podatkov" : $"X {latestAccelerometer.X:F2}, Y {latestAccelerometer.Y:F2}, Z {latestAccelerometer.Z:F2}",
                 latestAccelerometer is null ? "Ni podatkov" : FormatTimestamp(latestAccelerometer.Timestamp),
@@ -223,7 +224,7 @@
     private static string GetSensorLabel(SensorData sensorData) => sensorData switch
     {
         GPSData => "GPS",
-        AccelerometerData => "Pospesek",
+        AccelerometerData => "Pospešek",
         _ => sensorData.Kind.ToString()
     };
 

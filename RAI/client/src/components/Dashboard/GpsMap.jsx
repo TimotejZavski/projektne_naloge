@@ -108,7 +108,7 @@ function MapPanelHeader({
   const heading = deviceId || "Javna igrišča";
   const subtitle = deviceId
     ? `${gpsPointCount} GPS točk`
-    : `${playgroundCount} igrišč`;
+    : `${playgroundCount} igrišč · mobilna aplikacija pošilja meritve ob obisku`;
 
   return (
     <div className="panel-heading">
@@ -191,7 +191,7 @@ function OsmPlaygroundMap({ playgrounds, points, bounds }) {
       {gpsPositions.length >= 2 && (
         <Polyline
           positions={gpsPositions}
-          color="#1976d2"
+          color="#2563eb"
           weight={4}
           opacity={0.8}
         />
@@ -202,8 +202,8 @@ function OsmPlaygroundMap({ playgrounds, points, bounds }) {
           center={[p.lat, p.lng]}
           radius={6}
           pathOptions={{
-            color: "#1976d2",
-            fillColor: "#1976d2",
+            color: "#2563eb",
+            fillColor: "#2563eb",
             fillOpacity: 0.5,
             weight: 2,
           }}

@@ -2,11 +2,11 @@
 @inject NPO_Aplikacija.Services.ISensorDataRepository SensorDataRepository
 @inject NPO_Aplikacija.Services.ISensorService SensorService
 
-<PageTitle>Dev</PageTitle>
+<PageTitle>Razvojna orodja</PageTitle>
 
 <div class="dev-page">
-    <h1>Developer</h1>
-    <p>Tools for development and testing. Use with caution — this will delete persisted captured sensor data.</p>
+    <h1>Razvojna orodja</h1>
+    <p>Orodja za testiranje. Počisti lokalno shranjene meritve na napravi.</p>
 
     <div class="dev-actions">
         <button class="btn btn-danger" @onclick="HandleDeleteAsync" disabled="@isProcessing">@buttonText</button>
@@ -20,7 +20,7 @@
 @code {
     private bool isProcessing = false;
     private bool confirm = false;
-    private string buttonText = "Delete all captured data";
+    private string buttonText = "Počisti vse meritve";
     private string? message;
 
     private async Task HandleDeleteAsync()
@@ -28,12 +28,12 @@
         if (!confirm)
         {
             confirm = true;
-            buttonText = "Click again to confirm";
+            buttonText = "Potrdite ponovni klik";
             _ = Task.Run(async () =>
             {
                 await Task.Delay(5000);
                 confirm = false;
-                buttonText = "Delete all captured data";
+                buttonText = "Počisti vse meritve";
                 await InvokeAsync(StateHasChanged);
             });
             return;
@@ -45,20 +45,20 @@
         try
         {
             await SensorDataRepository.ClearAsync();
-            message = "All captured data cleared.";
+            message = "Vse lokalne meritve so počiščene.";
 
             // reinitialize sensors so UI gets fresh state
             await SensorService.InitializeAsync();
         }
         catch (Exception ex)
         {
-            message = $"Error clearing data: {ex.Message}";
+            message = $"Napaka pri brisanju: {ex.Message}";
         }
         finally
         {
             isProcessing = false;
             confirm = false;
-            buttonText = "Delete all captured data";
+            buttonText = "Počisti vse meritve";
         }
     }
 }

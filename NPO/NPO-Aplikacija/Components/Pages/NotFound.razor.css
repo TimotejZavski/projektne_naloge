@@ -1,0 +1,37 @@
+.notfound {
+    display: grid;
+    justify-items: center;
+    gap: 0.4rem;
+    text-align: center;
+    padding: 3rem 1.5rem;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    background: #ffffff;
+    box-shadow: var(--app-shadow);
+}
+
+.notfound__mark {
+    margin-bottom: 0.4rem;
+    filter: drop-shadow(0 8px 18px rgba(30, 64, 175, 0.25));
+}
+
+.notfound__code {
+    margin: 0;
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--app-primary-strong);
+}
+
+.notfound h1 {
+    margin: 0;
+    color: var(--app-text-strong);
+    font-size: 1.4rem;
+    font-weight: 750;
+}
+
+.notfound__lead {
+    margin: 0 0 0.85rem;
+    max-width: 26rem;
+    color: var(--app-text-muted);
+}

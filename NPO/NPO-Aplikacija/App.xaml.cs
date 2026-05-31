@@ -1,4 +1,4 @@
-﻿namespace NPO_Aplikacija
+namespace NPO_Aplikacija
 {
     public partial class App : Application
     {
@@ -9,7 +9,7 @@
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new MainPage()) { Title = "NPO-Aplikacija" };
+            return new Window(new MainPage()) { Title = "Smart Playgrounds" };
         }
     }
 }

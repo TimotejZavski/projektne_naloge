@@ -3,34 +3,35 @@
 @inject ISensorDataRepository SensorDataRepository
 @implements IAsyncDisposable
 
-<PageTitle>Sensors</PageTitle>
+<PageTitle>Meritve v živo</PageTitle>
 
 <div class="sensor-dashboard">
-    <section class="sensor-hero shadow-sm">
+    <section class="sensor-hero">
         <div class="sensor-hero__copy">
-            <p class="sensor-kicker">Live sensor dashboard</p>
-            <h1>Sensors</h1>
+            <p class="sensor-kicker">Smart Playgrounds</p>
+            <h1>Meritve v živo</h1>
+            <p class="sensor-lead">Trenutni zajem GPS lokacije in pospeškometra med obiskom igrišča.</p>
             <div class="sensor-actions">
-                <button class="btn btn-light sensor-primary-action" @onclick="RefreshAsync" disabled="@isLoading">
-                    @(isLoading ? "Refreshing..." : "Refresh data")
+                <button class="btn btn-primary sensor-primary-action" @onclick="RefreshAsync" disabled="@isLoading">
+                    @(isLoading ? "Osvežujem…" : "Osveži")
                 </button>
-                <button class="btn btn-outline-light sensor-secondary-action" @onclick="ClearHistoryAsync" disabled="@isLoading || !sensorHistory.Any()">
-                    Clear history
+                <button class="btn btn-outline-secondary sensor-secondary-action" @onclick="ClearHistoryAsync" disabled="@isLoading || !sensorHistory.Any()">
+                    Počisti zgodovino
                 </button>
             </div>
         </div>
 
         <div class="sensor-hero__status">
             <div class="sensor-status-card">
-                <span class="sensor-status-dot"></span>
+                <span class="sensor-status-dot @GetConnectionDotClass()"></span>
                 <div>
-                    <div class="sensor-status-label">Connection</div>
-                    <div class="sensor-status-value">Mock capture ready</div>
+                    <div class="sensor-status-label">Zajem</div>
+                    <div class="sensor-status-value">@GetConnectionStatus()</div>
                 </div>
             </div>
             <div class="sensor-status-card sensor-status-card--accent">
                 <div>
-                    <div class="sensor-status-label">Stored samples</div>
+                    <div class="sensor-status-label">Shranjeni vzorci</div>
                     <div class="sensor-status-value">@sensorHistory.Count</div>
                 </div>
             </div>
@@ -40,7 +41,7 @@
     @if (isLoading && !sensorHistory.Any())
     {
         <div class="sensor-loading">
-            <em>Loading sensor data...</em>
+            <em>Nalagam meritve…</em>
         </div>
     }
     else
@@ -50,26 +51,26 @@
                 <div class="card shadow-sm h-100 sensor-panel">
                     <div class="card-body">
                         <div class="sensor-panel__header">
-                            <h2 class="h5 card-title mb-0">GPS</h2>
-                            <span class="sensor-pill sensor-pill--gps">Location</span>
+                            <h2 class="h5 card-title mb-0">Lokacija</h2>
+                            <span class="sensor-pill sensor-pill--gps">GPS</span>
                         </div>
                         @if (latestGpsData is null)
                         {
-                            <p class="text-muted mb-0">No GPS data available yet.</p>
+                            <p class="text-muted mb-0">Lokacija se bo prikazala ob prvem zajemu na igrišču.</p>
                         }
                         else
                         {
                             <div class="sensor-metrics">
                                 <div class="sensor-metric">
-                                    <span class="sensor-metric__label">Latitude</span>
+                                    <span class="sensor-metric__label">Zem. širina</span>
                                     <span class="sensor-metric__value">@latestGpsData.Latitude</span>
                                 </div>
                                 <div class="sensor-metric">
-                                    <span class="sensor-metric__label">Longitude</span>
+                                    <span class="sensor-metric__label">Zem. dolžina</span>
                                     <span class="sensor-metric__value">@latestGpsData.Longitude</span>
                                 </div>
                                 <div class="sensor-metric sensor-metric--wide">
-                                    <span class="sensor-metric__label">Timestamp</span>
+                                    <span class="sensor-metric__label">Čas</span>
                                     <span class="sensor-metric__value">@latestGpsData.Timestamp.ToLocalTime()</span>
                                 </div>
                             </div>
@@ -82,12 +83,12 @@
                 <div class="card shadow-sm h-100 sensor-panel">
                     <div class="card-body">
                         <div class="sensor-panel__header">
-                            <h2 class="h5 card-title mb-0">Accelerometer</h2>
-                            <span class="sensor-pill sensor-pill--accel">Motion</span>
+                            <h2 class="h5 card-title mb-0">Gibanje</h2>
+                            <span class="sensor-pill sensor-pill--accel">Pospeškometer</span>
                         </div>
                         @if (latestAccelerometerData is null)
                         {
-                            <p class="text-muted mb-0">No accelerometer data available yet.</p>
+                            <p class="text-muted mb-0">Meritve gibanja se bodo prikazale ob aktivnem zajemu.</p>
                         }
                         else
                         {
@@ -105,7 +106,7 @@
                                     <span class="sensor-metric__value">@latestAccelerometerData.Z</span>
                                 </div>
                                 <div class="sensor-metric sensor-metric--wide">
-                                    <span class="sensor-metric__label">Timestamp</span>
+                                    <span class="sensor-metric__label">Čas</span>
                                     <span class="sensor-metric__value">@latestAccelerometerData.Timestamp.ToLocalTime()</span>
                                 </div>
                             </div>
@@ -119,15 +120,15 @@
             <div class="card-body">
                 <div class="sensor-panel__header sensor-panel__header--stacked mb-3">
                     <div>
-                        <h2 class="h5 card-title mb-1">Captured data</h2>
-                        <p class="text-muted mb-0">Latest samples from both mock sensors.</p>
+                        <h2 class="h5 card-title mb-1">Zadnji vzorci</h2>
+                        <p class="text-muted mb-0">Lokalna zgodovina zajetih meritev na tej napravi.</p>
                     </div>
-                    <span class="sensor-pill sensor-pill--neutral">@sensorHistory.Count entries</span>
+                    <span class="sensor-pill sensor-pill--neutral">@sensorHistory.Count vnosov</span>
                 </div>
 
                 @if (!sensorHistory.Any())
                 {
-                    <p class="text-muted mb-0">No captured data yet.</p>
+                    <p class="text-muted mb-0">Še ni meritev. Zajem poteka med obiskom igrišča.</p>
                 }
                 else
                 {
@@ -135,9 +136,9 @@
                         <table class="table align-middle mb-0 sensor-table">
                             <thead>
                                 <tr>
-                                    <th>Type</th>
-                                    <th>Timestamp</th>
-                                    <th>Details</th>
+                                    <th>Tip</th>
+                                    <th>Čas</th>
+                                    <th>Podrobnosti</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -207,6 +208,31 @@
         _ = InvokeAsync(StateHasChanged);
     }
 
+    private string GetConnectionStatus()
+    {
+        var gpsActive = SensorService.GPSSensor.IsActive;
+        var accelActive = SensorService.AccelerometerSensor.IsActive;
+
+        if (gpsActive && accelActive)
+            return "Senzorji aktivni";
+
+        if (gpsActive || accelActive)
+            return "Delni zajem";
+
+        return "Pripravljanje…";
+    }
+
+    private string GetConnectionDotClass()
+    {
+        if (SensorService.GPSSensor.IsActive && SensorService.AccelerometerSensor.IsActive)
+            return "sensor-status-dot--active";
+
+        if (SensorService.GPSSensor.IsActive || SensorService.AccelerometerSensor.IsActive)
+            return "sensor-status-dot--partial";
+
+        return "";
+    }
+
     private static string GetSensorBadgeClass(SensorData sensorData) => sensorData switch
     {
         GPSData => "sensor-pill--gps",
@@ -217,7 +243,7 @@
     private static string GetSensorLabel(SensorData sensorData) => sensorData switch
     {
         GPSData => "GPS",
-        AccelerometerData => "Accelerometer",
+        AccelerometerData => "Pospešek",
         _ => sensorData.Kind.ToString()
     };
 
@@ -225,6 +251,6 @@
     {
         GPSData gpsData => $"Lat: {gpsData.Latitude}, Lon: {gpsData.Longitude}",
         AccelerometerData accelerometerData => $"X: {accelerometerData.X}, Y: {accelerometerData.Y}, Z: {accelerometerData.Z}",
-        _ => "Unknown sensor data"
+        _ => "Neznana meritev"
     };
 }
