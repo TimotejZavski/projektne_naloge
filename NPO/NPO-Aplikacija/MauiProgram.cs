@@ -17,9 +17,19 @@ namespace NPO_Aplikacija
 
             builder.Services.AddMauiBlazorWebView();
 
+            var raiIntegrationOptions = RaiIntegrationOptions.FromEnvironment();
+            builder.Services.AddSingleton(raiIntegrationOptions);
+            builder.Services.AddTransient<IRaiIntegrationClient>(serviceProvider =>
+                new RaiIntegrationClient(
+                    new HttpClient(),
+                    serviceProvider.GetRequiredService<RaiIntegrationOptions>(),
+                    serviceProvider.GetRequiredService<IDeviceIdentityProvider>(),
+                    serviceProvider.GetRequiredService<ILogger<RaiIntegrationClient>>()));
+
             // Registracija senzorskih storitev
             builder.Services.AddSingleton<IGPSSensor, GPSSensor>();
             builder.Services.AddSingleton<IAccelerometerSensor, AccelerometerSensor>();
+            builder.Services.AddSingleton<IDeviceIdentityProvider, DeviceIdentityProvider>();
             builder.Services.AddSingleton<ISensorService, SensorService>();
             builder.Services.AddSingleton<ISensorDataRepository, SensorDataRepository>();
             builder.Services.AddSingleton<IMqttSensorPublisher, MqttSensorPublisher>();

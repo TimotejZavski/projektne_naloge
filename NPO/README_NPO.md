@@ -142,6 +142,39 @@ Layout vsebuje:
 Novi NPO pogledi naj uporabljajo obstojeci `MainLayout` in naj svoje
 specificne stile omejijo na pripadajoce `.razor.css` datoteke.
 
+## SCRUM-45 Povezovanje NPO z RAI
+
+NPO aplikacija lahko poleg MQTT objave iste zajete meritve poslje tudi v
+RAI REST API. Integracija uporablja skupen identifikator naprave, zato se
+ista naprava enotno pojavlja v MQTT topicih in HTTP payload-ih.
+
+Lokalne nastavitve se berejo iz environment spremenljivk:
+
+```text
+NPO_DEVICE_ID=npo-phone-01
+NPO_RAI_BASE_URL=http://localhost:5000
+NPO_RAI_ACCESS_TOKEN=<RAI JWT access token>
+NPO_RAI_TIMEOUT_SECONDS=10
+```
+
+`NPO_RAI_ACCESS_TOKEN` se ne zapisuje v repozitorij. Token pridobis prek
+RAI prijave oziroma registracije in ga nastavis samo v lokalnem okolju.
+Ce token ni nastavljen, aplikacija ne posilja neavtenticiranih zapisov v
+RAI, ampak sinhronizacijo varno preskoci.
+
+Integracijski tok:
+
+- `GET /health` preveri dosegljivost RAI backenda,
+- `POST /api/devices` idempotentno registrira NPO napravo,
+- `POST /api/measurements/batch` poslje GPS in pospeskomer meritve v
+  RAI obliko `schemaVersion`, `deviceId`, `sensorType`, `timestampUtc`
+  in `data`.
+
+V aplikaciji je dodan sistemski pogled `Integracija`, kjer je mogoce
+preveriti povezavo, registrirati napravo in rocno poslati lokalno zajete
+meritve. Samodejna sinhronizacija je neblokirna, zato morebitna nedosegljivost
+RAI backenda ne ustavi lokalnega zajema podatkov ali MQTT objave.
+
 Primer GPS sporočila:
 
 ```json
