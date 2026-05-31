@@ -79,6 +79,7 @@ describe('MQTT GPS ingestion', () => {
   it('zavrne GPS payload, ki se ne ujema z MQTT topicom', async () => {
     await createOwnedDevice('npo-gps-02');
     const listener = new MqttListener();
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     await listener.handleMessage(
       'smart-playgrounds/devices/npo-gps-02/sensors/gps',
@@ -96,6 +97,10 @@ describe('MQTT GPS ingestion', () => {
       ),
     );
 
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[MQTT] Payload does not match topic: smart-playgrounds/devices/npo-gps-02/sensors/gps',
+    );
     await expect(SensorMeasurement.countDocuments()).resolves.toBe(0);
+    warnSpy.mockRestore();
   });
 });
