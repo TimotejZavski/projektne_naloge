@@ -1,16 +1,23 @@
 # ============================================================
-# RAI backend + MongoDB - lokalni razvojni environment (SCRUM-23)
+# RAI backend + MongoDB + Mosquitto - lokalni razvojni environment
+# (SCRUM-23 backend stack, SCRUM-37 broker wiring)
 # ============================================================
 #
-# Zagon:
+# Zagon (cel stack — mongo + broker + backend z eno komando):
 #   cd RAI/server
 #   cp .env.docker.example .env.docker          # in nastavi sekrete!
-#   docker compose up -d
+#   docker compose up -d --build
 #
 # Preverjanje:
-#   docker compose ps                            # status servisov
+#   docker compose ps                            # vsi servisi 'healthy'
 #   docker compose logs -f backend               # spremljanje logov
-#   curl http://localhost:5000/health            # health check
+#   curl http://localhost:5000/health            # backend health check
+#
+# MQTT round-trip smoke (v dveh oknih, po zagonu):
+#   docker exec -it rai-mqtt mosquitto_sub -h localhost \
+#       -t 'smart-playgrounds/devices/test/sensors/+' -v
+#   docker exec -it rai-mqtt mosquitto_pub -h localhost \
+#       -t 'smart-playgrounds/devices/test/sensors/gps' -m '{"ping":1}'
 #
 # Ustavitev:
 #   docker compose down                          # ohrani podatke v volumes
@@ -53,6 +60,44 @@ services:
       start_period: 20s
 
   # ----------------------------------------------------------
+  # MQTT broker (Mosquitto) — SCRUM-37
+  # ----------------------------------------------------------
+  # Source-of-truth za config je SA/mqtt/mosquitto.conf — bind-mountamo
+  # ga read-only, tako da se sprememba konfiguracije reflektira tukaj
+  # brez podvajanja datoteke v RAI mapi.
+  #
+  # OPOMBA: standalone broker compose v SA/mqtt/docker-compose.yml
+  # ostaja za uporabo, ko zelimo BREZ backenda samo broker (npr. NPO
+  # mobile dev). Container name, volumes in network so RAZLICNI od
+  # standalone, tako da lahko obe compose datoteki tecejo hkrati brez
+  # konflikta.
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: rai-mqtt
+    restart: unless-stopped
+    ports:
+      # MQTT (mobilna app + backend interno) in WebSockets (brskalniski
+      # klienti za live update markerjev). Izpostavljeno na host SAMO za
+      # razvoj; produkcija naj broker zadrzi znotraj Docker mreze.
+      - "${MQTT_PORT:-1883}:1883"
+      - "${MQTT_WS_PORT:-9001}:9001"
+    volumes:
+      - ../../SA/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - rai_mosquitto_data:/mosquitto/data
+      - rai_mosquitto_log:/mosquitto/log
+    networks:
+      - rai-network
+    healthcheck:
+      # Hitri probe — mosquitto_sub se vrne s kodo 0 takoj ko broker
+      # sprejme CONNECT. -C 1 -W 3 prepreci, da bi sub visel ce ni
+      # nikoli prejel sporocila.
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -p 1883 -t '$$SYS/#' -C 1 -W 3 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------
   # RAI backend (Node.js + Express)
   # ----------------------------------------------------------
   backend:
@@ -67,6 +112,11 @@ services:
         # Cakaj da je mongo healthy PRED zagon backend-a.
         # Brez tega bi backend padel z ENOTFOUND v prvih sekundah.
         condition: service_healthy
+      mosquitto:
+        # MqttListener ima reconnect logiko, tako da backend NE bi padel
+        # ce bi broker manjkal, ampak cakanje na healthy daje cisti boot
+        # log brez "MQTT connection refused" v prvih sekundah.
+        condition: service_healthy
     ports:
       - "${BACKEND_PORT:-5000}:5000"
     env_file:
@@ -78,6 +128,9 @@ services:
       # mreze je mongo dosegljiv preko service name 'mongo', NE localhost.
       # (localhost bi pomenil sam backend container.)
       MONGODB_URI: mongodb://mongo:27017/${MONGO_DATABASE:-rai}
+      # MQTT_BROKER_URL prav tako prepise .env.docker: znotraj Docker
+      # mreze je broker dosegljiv preko service name 'mosquitto'.
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
       NODE_ENV: ${NODE_ENV:-production}
     networks:
       - rai-network
@@ -94,6 +147,10 @@ volumes:
     name: rai_mongo_data
   rai_mongo_config:
     name: rai_mongo_config
+  rai_mosquitto_data:
+    name: rai_mosquitto_data
+  rai_mosquitto_log:
+    name: rai_mosquitto_log
 
 # ----------------------------------------------------------
 # Internal network
