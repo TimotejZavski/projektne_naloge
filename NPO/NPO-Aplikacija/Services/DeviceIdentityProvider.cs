@@ -13,7 +13,17 @@ public sealed class DeviceIdentityProvider : IDeviceIdentityProvider
 
     public string DisplayName => $"{Platform} NPO naprava";
 
-    public string Platform => DeviceInfo.Current.Platform.ToString().ToLowerInvariant();
+    public string Platform => DeviceInfo.Current.Platform.ToString().ToLowerInvariant() switch
+    {
+        "android" => "android",
+        "ios" => "ios",
+        "maccatalyst" => "macos",
+        "macos" => "macos",
+        "tizen" => "other",
+        "winui" => "windows",
+        "windows" => "windows",
+        _ => "other"
+    };
 
     public string AppVersion => AppInfo.Current.VersionString
         ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
