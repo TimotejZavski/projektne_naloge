@@ -1,0 +1,128 @@
+name: Project CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "SCRUM-**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: project-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rai-server:
+    name: RAI server tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: RAI/server
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run server tests
+        run: npm test
+
+  rai-client:
+    name: RAI client checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: RAI/client
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run client tests
+        run: npm test
+
+      - name: Build client
+        run: npm run build
+
+  sa-backup:
+    name: SA backup tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SA/backup
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run backup tests
+        run: npm test
+
+  npo-windows:
+    name: NPO Windows build
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Restore NPO project
+        run: dotnet restore NPO\NPO-Aplikacija\NPO-Aplikacija.csproj -p:TargetFramework=net10.0-windows10.0.19041.0
+
+      - name: Build NPO Windows target
+        run: dotnet build NPO\NPO-Aplikacija\NPO-Aplikacija.csproj -f net10.0-windows10.0.19041.0 --no-restore
+
+  docker-builds:
+    name: Docker build checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build RAI image
+        run: docker build -t smart-playgrounds-rai:ci RAI
+
+      - name: Build backup image
+        run: docker build -t smart-playgrounds-backup:ci SA/backup
