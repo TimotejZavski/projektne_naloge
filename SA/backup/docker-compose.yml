@@ -1,0 +1,58 @@
+# Smart Playgrounds — MongoDB backup service (SCRUM-44).
+#
+# Standalone compose, matches the SA/mqtt/ pattern: each SA service
+# brings its own compose file so it can be reasoned about and operated
+# independently of the rest.
+#
+# Two intended usages:
+#
+#   1) Atlas (production target — the default):
+#        export MONGODB_URI="mongodb+srv://USER:PASS@CLUSTER.example.net/db"
+#        docker compose -f SA/backup/docker-compose.yml up -d
+#
+#   2) Local dev mongo (the one in RAI/server/docker-compose.yml):
+#        # First bring up RAI's stack so the 'rai-network' exists:
+#        docker compose -f RAI/server/docker-compose.yml up -d
+#
+#        # Then start backup with the local URI and join rai-network:
+#        export MONGODB_URI="mongodb://mongo:27017/rai"
+#        docker compose -f SA/backup/docker-compose.yml \
+#                       -f SA/backup/docker-compose.local-mongo.yml up -d
+#
+# One-shot backup (no scheduler, dump-and-exit — useful for manual snapshots):
+#   docker compose -f SA/backup/docker-compose.yml run --rm backup npm run start:once
+#
+# View logs:
+#   docker compose -f SA/backup/docker-compose.yml logs -f backup
+#
+# Tear down without losing dumps:
+#   docker compose -f SA/backup/docker-compose.yml down
+# Tear down INCLUDING dumps (destructive):
+#   docker compose -f SA/backup/docker-compose.yml down -v
+
+services:
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smart-playgrounds-backup:dev
+    container_name: smart-playgrounds-backup
+    restart: unless-stopped
+    environment:
+      # Required. No default — fail loudly if the operator forgot it.
+      MONGODB_URI: ${MONGODB_URI:?MONGODB_URI is required (Atlas URI or mongodb://host:port/db)}
+      BACKUP_DIR: /backups
+      BACKUP_KEEP: ${BACKUP_KEEP:-7}
+      CRON_SCHEDULE: ${CRON_SCHEDULE:-0 2 * * *}
+      # Force UTC so the cron expression means what it says regardless
+      # of the host timezone.
+      TZ: UTC
+    volumes:
+      # Named volume — survives `docker compose down`; wiped only by
+      # `down -v`. Browse contents from host with:
+      #   docker run --rm -v smart_playgrounds_backup_dumps:/d alpine ls -la /d
+      - backup_dumps:/backups
+
+volumes:
+  backup_dumps:
+    name: smart_playgrounds_backup_dumps
