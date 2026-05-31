@@ -113,12 +113,25 @@ class MqttListener {
         return;
       }
 
+      if (
+        (messageData.deviceId && messageData.deviceId !== deviceId) ||
+        (messageData.sensorType && messageData.sensorType !== sensorType)
+      ) {
+        // eslint-disable-next-line no-console
+        console.warn(`[MQTT] Payload does not match topic: ${topic}`);
+        return;
+      }
+
       // Pripravi measurement objekt
       const measurement = {
         deviceId,
         sensorType,
-        timestampUtc: messageData.timestamp || new Date().toISOString(),
+        timestampUtc:
+          messageData.timestampUtc ||
+          messageData.timestamp ||
+          new Date().toISOString(),
         data: messageData.data || messageData,
+        schemaVersion: messageData.schemaVersion || "1.0",
       };
 
       // Validiraj podatke
@@ -160,6 +173,7 @@ class MqttListener {
         timestampUtc: validation.cleanedData.timestampUtc,
         data: validation.cleanedData.data,
         source: "mqtt",
+        schemaVersion: measurement.schemaVersion,
       });
 
       await rawMeasurement.save();
