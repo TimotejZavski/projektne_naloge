@@ -129,6 +129,38 @@ Hitri pregled:
 - `GET  /api/measurements/:id` - posamicna
 - `GET  /api/devices/:id/measurements` - convenience helper
 
+## GPS tok podatkov med NPO in RAI
+
+NPO aplikacija objavlja GPS meritve prek MQTT topica:
+
+```text
+smart-playgrounds/devices/{deviceId}/sensors/gps
+```
+
+RAI backend MQTT listener sporocilo validira in ga shrani v
+`sensor_measurements` z `source: "mqtt"`. Cas meritve se bere iz
+`timestampUtc`, zato se v bazi ohrani cas zajema na napravi in ne samo cas
+prejema na strezniku.
+
+Primer GPS payload-a:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "deviceId": "npo-phone-01",
+  "sensorType": "gps",
+  "timestampUtc": "2026-05-31T12:00:00Z",
+  "data": {
+    "latitude": 46.5547,
+    "longitude": 15.6459,
+    "accuracyMeters": 8.5
+  }
+}
+```
+
+Za prikaz GPS sledi frontend bere meritve prek
+`GET /api/measurements?deviceId={deviceId}&sensorType=gps&sort=desc`.
+
 ## Docker okolje (SCRUM-23)
 
 Backend + MongoDB se zazenata z **enim ukazom**:

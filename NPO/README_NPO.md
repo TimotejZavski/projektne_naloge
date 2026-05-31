@@ -97,6 +97,11 @@ Topic format:
 smart-playgrounds/devices/{deviceId}/sensors/{sensorType}
 ```
 
+GPS zajem najprej poskusi prebrati dejansko lokacijo naprave prek MAUI
+geolokacije. Ce lokacija v razvojnem okolju ni na voljo, aplikacija uporabi
+varen nadomestni koordinatni par, da MQTT tok in RAI integracija ostaneta
+preverljiva tudi na emulatorju ali namizju brez vklopljene lokacije.
+
 ## SCRUM-27 Dashboard view
 
 NPO aplikacija ima dashboard na zacetni poti `/` in dodatni poti `/dashboard`.
@@ -147,7 +152,8 @@ Primer GPS sporočila:
   "timestampUtc": "2026-05-08T12:00:00Z",
   "data": {
     "latitude": 46.5547,
-    "longitude": 15.6459
+    "longitude": 15.6459,
+    "accuracyMeters": 8.5
   }
 }
 ```
