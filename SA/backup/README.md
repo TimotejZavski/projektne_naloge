@@ -276,6 +276,33 @@ Coverage today: **51 tests across 3 suites**.
 - `tests/cron.test.js` — scheduler wiring; success/failure tick
   semantics; error swallowing so cron keeps ticking.
 
+### Smoke test (end-to-end, requires Docker)
+
+The unit suite above runs without Docker or a real Mongo. For a true
+end-to-end check — real `mongodump`, real `mongorestore`, real archive
+file on a real volume — run the smoke script:
+
+```bash
+bash SA/backup/scripts/smoke-test.sh
+```
+
+It performs eight steps:
+
+1. Builds the backup image from the Dockerfile.
+2. Spins up a throwaway `mongo:7` on a private network.
+3. Seeds a marker document.
+4. Runs the backup container against the throwaway mongo.
+5. Verifies the archive exists and matches the documented naming
+   convention.
+6. Drops the seeded collection (so a "the doc was never gone"
+   false-positive is impossible).
+7. Restores from the archive via `mongorestore`.
+8. Asserts the marker document is back with the same value.
+
+All resources are namespaced with a unique suffix per run and cleaned
+up on exit (including on Ctrl-C). Exits 0 only on a complete
+round-trip; any failure prints exactly which step failed and why.
+
 ## Troubleshooting
 
 ### `MONGODB_URI is required`
