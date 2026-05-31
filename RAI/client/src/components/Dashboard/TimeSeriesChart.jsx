@@ -53,7 +53,7 @@ export default function TimeSeriesChart({ measurements, sensorType, isLoading, e
       isLoading={isLoading}
       error={error}
       isEmpty={isEmpty}
-      emptyMessage={`Ni ${sensorType === 'accelerometer' ? 'pospeškometer' : 'GPS'} meritev za izbrano obdobje.`}
+      emptyMessage={`Ni ${sensorType === 'accelerometer' ? 'pospeškometra' : 'GPS'} meritev za izbrano obdobje. Preverite, ali mobilna aplikacija pošilja podatke z igrišča.`}
       onRetry={onRetry}
     >
       {data && options && (

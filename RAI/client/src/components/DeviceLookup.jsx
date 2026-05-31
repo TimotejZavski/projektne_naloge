@@ -71,12 +71,15 @@ export default function DeviceLookup() {
   return (
     <section className="lookup-panel" aria-labelledby="lookup-heading">
       <div className="panel-heading">
-        <h2 id="lookup-heading">Pregled naprave po deviceId</h2>
+        <h2 id="lookup-heading">Iskanje naprave</h2>
+        <p className="hint lookup-intro">
+          Poiščite napravo po identifikatorju in preglejte zadnje meritve z igrišča.
+        </p>
       </div>
 
       <form className="lookup-form" onSubmit={handleSubmit} noValidate>
         <label className="field">
-          <span className="status-label">deviceId</span>
+          <span className="status-label">Identifikator naprave</span>
           <input
             type="text"
             value={deviceId}
@@ -98,7 +101,7 @@ export default function DeviceLookup() {
         </button>
       </form>
       <p id="lookup-help" className="hint">
-        Vnesi user-facing identifikator naprave (3–64 znakov:{" "}
+        Enako ime kot v mobilni aplikaciji (3–64 znakov:{" "}
         <code>a-z 0-9 . _ -</code>).
       </p>
 
@@ -155,7 +158,7 @@ function DeviceResult({ device, measurements, measurementsError }) {
         </header>
         <dl className="device-card__meta">
           <div>
-            <dt>deviceId</dt>
+            <dt>Identifikator</dt>
             <dd>
               <code>{device.deviceId}</code>
             </dd>
@@ -189,17 +192,17 @@ function DeviceResult({ device, measurements, measurementsError }) {
         </header>
         {measurementsError ? (
           <p role="alert" className="error-banner">
-            Meritev ni bilo mogoce nalozit ({describeShort(measurementsError)}).
+            Meritev ni bilo mogoče naložiti ({describeShort(measurementsError)}).
           </p>
         ) : null}
         {measurements.length === 0 && !measurementsError ? (
-          <p className="hint">Naprava se nima zabelezenih meritev.</p>
+          <p className="hint">Naprava še nima zabeleženih meritev z igrišča.</p>
         ) : null}
         {measurements.length > 0 ? (
           <table className="measurements-table">
             <thead>
               <tr>
-                <th scope="col">Cas (UTC)</th>
+                <th scope="col">Čas (UTC)</th>
                 <th scope="col">Senzor</th>
                 <th scope="col">Vir</th>
                 <th scope="col">Podatki</th>

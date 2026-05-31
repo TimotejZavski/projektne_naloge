@@ -1,6 +1,13 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">NPO-Aplikacija</a>
+        <a class="navbar-brand" href="">
+            <svg class="brand-mark" viewBox="0 0 456 456" aria-hidden="true">
+                <path d="M228 124 C 286 124 326 166 326 220 C 326 280 252 316 228 332 C 204 316 130 280 130 220 C 130 166 170 124 228 124 Z" fill="#ffffff" />
+                <circle cx="228" cy="216" r="46" fill="#22c55e" />
+                <circle cx="228" cy="216" r="18" fill="#ffffff" />
+            </svg>
+            <span class="brand-name">Smart Playgrounds</span>
+        </a>
     </div>
 </div>
 
@@ -8,15 +15,15 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
-        <div class="nav-section-label">Pregledi</div>
+        <div class="nav-section-label">Aplikacija</div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Dashboard
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Pregled
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="sensors">
-                <span class="bi bi-activity" aria-hidden="true"></span> Sensors
+                <span class="bi bi-activity" aria-hidden="true"></span> Meritve v živo
             </NavLink>
         </div>
         <div class="nav-item px-3">
@@ -24,7 +31,7 @@
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Naprave
             </NavLink>
         </div>
-        <div class="nav-section-label">Sistem</div>
+        <div class="nav-section-label">Račun</div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="register">
                 <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Registracija
@@ -35,9 +42,10 @@
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Integracija
             </NavLink>
         </div>
-        <div class="nav-item px-3">
+        <div class="nav-section-label nav-section-label--muted">Podpora</div>
+        <div class="nav-item nav-item--secondary px-3">
             <NavLink class="nav-link" href="dev">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Dev
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Diagnostika
             </NavLink>
         </div>
     </nav>

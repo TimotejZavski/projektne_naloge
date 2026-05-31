@@ -18,11 +18,38 @@
 
 .top-row {
     min-height: 3.5rem;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .navbar-brand {
-    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: #ffffff;
+    font-size: 1.15rem;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+}
+
+.navbar-brand:hover,
+.navbar-brand:focus {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.brand-mark {
+    width: 1.6rem;
+    height: 1.6rem;
+    flex: 0 0 auto;
+    filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.3));
+}
+
+/* Align the brand with the header/content left edge (drop Bootstrap's container gutter) */
+.top-row > .container-fluid {
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .bi {
@@ -83,13 +110,23 @@
 }
 
 .nav-item ::deep a.active {
-    background-color: rgba(59, 130, 246, 0.28);
+    background-color: rgba(255, 255, 255, 0.16);
     color: white;
+    box-shadow: inset 3px 0 0 var(--app-accent);
 }
 
 .nav-item ::deep .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.09);
+    background-color: rgba(255, 255, 255, 0.1);
     color: white;
+}
+
+.nav-section-label--muted {
+    margin-top: 0.75rem;
+    color: rgba(255, 255, 255, 0.42);
+}
+
+.nav-item--secondary ::deep .nav-link {
+    color: rgba(255, 255, 255, 0.68);
 }
 
 .nav-scrollable {

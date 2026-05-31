@@ -1,0 +1,111 @@
+# ============================================================
+# Smart Playgrounds - celoten lokalni stack (SCRUM-38)
+# ============================================================
+#
+# Servisi: MongoDB + RAI backend + MQTT broker (Mosquitto)
+#
+# Zagon (priporoceno):
+#   cd SA && ./setup.sh
+#
+# Rocni zagon:
+#   cd SA
+#   cp .env.example .env    # in nastavi JWT sekrete
+#   docker compose up -d --build
+#
+# Preverjanje:
+#   docker compose ps
+#   curl http://localhost:5000/health
+#
+# Ustavitev:
+#   docker compose down          # ohrani podatke
+#   docker compose down -v       # zbrise volumes (POZOR!)
+# ============================================================
+
+services:
+  # ----------------------------------------------------------
+  # MongoDB
+  # ----------------------------------------------------------
+  mongo:
+    image: mongo:7.0
+    container_name: rai-mongo
+    restart: unless-stopped
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - rai_mongo_data:/data/db
+      - rai_mongo_config:/data/configdb
+    networks:
+      - smart-playgrounds
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ----------------------------------------------------------
+  # MQTT broker (Mosquitto) - SCRUM-14 / SCRUM-37
+  # ----------------------------------------------------------
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: smart-playgrounds-mqtt
+    restart: unless-stopped
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+      - "${MQTT_WS_PORT:-9001}:9001"
+    volumes:
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks:
+      - smart-playgrounds
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "mosquitto_sub -h localhost -p 1883 -t '$$SYS/#' -C 1 -W 3 || exit 1"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------
+  # RAI backend (Node.js + Express + MQTT listener)
+  # ----------------------------------------------------------
+  backend:
+    build:
+      context: ../RAI/server
+      dockerfile: Dockerfile
+    image: rai-backend:dev
+    container_name: rai-backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    env_file:
+      - .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/${MONGO_DATABASE:-rai}
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
+      MQTT_ENABLED: ${MQTT_ENABLED:-true}
+      NODE_ENV: ${NODE_ENV:-production}
+    networks:
+      - smart-playgrounds
+
+volumes:
+  rai_mongo_data:
+    name: rai_mongo_data
+  rai_mongo_config:
+    name: rai_mongo_config
+  mosquitto_data:
+    name: mosquitto_data
+  mosquitto_log:
+    name: mosquitto_log
+
+networks:
+  smart-playgrounds:
+    name: smart-playgrounds
+    driver: bridge

@@ -1,56 +1,60 @@
-:root {
-    /* Simplified, darker theme for sensors page */
-    --sensor-bg-color: #071023; /* very dark navy */
-    --sensor-card-bg: rgba(255, 255, 255, 0.03);
-    --sensor-border: rgba(255, 255, 255, 0.06);
-    --sensor-text-high: #e6eef8;
-    --sensor-text-medium: #cbd5e1;
-}
-
 .sensor-dashboard {
     display: grid;
     gap: 1rem;
+    color: #172033;
 }
 
 .sensor-hero {
+    position: relative;
+    overflow: hidden;
     display: grid;
     grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.9fr);
-    gap: 1rem;
-    padding: 1.25rem;
-    border-radius: 0.75rem;
-    color: var(--sensor-text-high);
-    background-color: var(--sensor-bg-color);
-    border: 1px solid var(--sensor-border);
-    overflow: visible;
-    position: relative;
+    gap: 1.25rem;
+    padding: 1.6rem 1.5rem;
+    border-radius: var(--app-radius);
+    background: var(--app-brand-gradient);
+    box-shadow: var(--app-shadow);
 }
 
 .sensor-hero::after {
-    /* removed bright decorative glow for reduced brightness */
-    content: none;
+    content: "";
+    position: absolute;
+    top: -45%;
+    right: -6%;
+    width: 18rem;
+    height: 18rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+    pointer-events: none;
 }
 
-.sensor-hero__copy,
-.sensor-hero__status {
+.sensor-hero > * {
     position: relative;
     z-index: 1;
 }
 
 .sensor-kicker {
-    margin: 0 0 0.4rem;
+    margin: 0 0 0.25rem;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    font-size: 0.75rem;
-    color: var(--sensor-text-medium);
 }
 
 .sensor-hero h1 {
-    margin-bottom: 0.4rem;
-    color: var(--sensor-text-high);
-    font-weight: 700;
+    margin: 0 0 0.35rem;
+    color: #ffffff;
+    font-size: 2rem;
+    font-weight: 750;
+    letter-spacing: -0.01em;
 }
 
-
+.sensor-lead {
+    margin: 0 0 1rem;
+    color: rgba(255, 255, 255, 0.88);
+    max-width: 34rem;
+}
 
 .sensor-actions {
     display: flex;
@@ -59,12 +63,38 @@
 
 .sensor-primary-action,
 .sensor-secondary-action {
-    border-radius: 999px;
-    padding-inline: 0.9rem;
+    border-radius: 0.55rem;
 }
 
-.sensor-primary-action {
-    box-shadow: none; /* remove shadow per request */
+.sensor-hero .sensor-primary-action.btn-primary {
+    color: var(--app-primary-strong);
+    background-color: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 8px 18px -10px rgba(15, 23, 42, 0.5);
+}
+
+.sensor-hero .sensor-primary-action.btn-primary:hover {
+    color: var(--app-primary-strong);
+    background-color: #f1f5ff;
+    border-color: #f1f5ff;
+}
+
+.sensor-hero .sensor-secondary-action.btn-outline-secondary {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.sensor-hero .sensor-secondary-action.btn-outline-secondary:hover {
+    color: var(--app-primary-strong);
+    background-color: #ffffff;
+    border-color: #ffffff;
+}
+
+.sensor-hero__status {
+    display: grid;
+    gap: 0.75rem;
+    align-content: start;
 }
 
 .sensor-status-card {
@@ -72,50 +102,56 @@
     align-items: center;
     gap: 0.7rem;
     padding: 0.85rem 0.95rem;
-    margin-bottom: 0.6rem;
-    border-radius: 0.8rem;
-    background: transparent;
-    border: 1px solid var(--sensor-border);
+    border: 1px solid #d9e2ef;
+    border-radius: 0.5rem;
+    background: #ffffff;
 }
 
 .sensor-status-card--accent {
-    background: rgba(255,255,255,0.02);
+    background: #f8fafc;
 }
 
 .sensor-status-dot {
     width: 0.7rem;
     height: 0.7rem;
     border-radius: 999px;
-    background: #34d399;
-    box-shadow: none;
+    background: #cbd5e1;
     flex: 0 0 auto;
 }
 
+.sensor-status-dot--active {
+    background: #22c55e;
+}
+
+.sensor-status-dot--partial {
+    background: #f59e0b;
+}
+
 .sensor-status-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
+    font-size: 0.74rem;
+    font-weight: 700;
     letter-spacing: 0.06em;
-    color: var(--sensor-text-medium);
+    text-transform: uppercase;
+    color: #64748b;
 }
 
 .sensor-status-value {
     font-size: 1rem;
-    font-weight: 600;
-    color: var(--sensor-text-high);
+    font-weight: 650;
+    color: #0f172a;
 }
 
 .sensor-loading {
-    padding: 0.85rem 1rem;
-    border-radius: 0.8rem;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid var(--sensor-border);
-    color: var(--sensor-text-medium);
+    padding: 1rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 0.5rem;
+    color: #64748b;
+    background: #f8fafc;
 }
 
 .sensor-panel {
-    border-radius: 0.9rem;
-    border: 1px solid var(--sensor-border);
-    background: transparent;
+    border-color: var(--app-border);
+    border-radius: var(--app-radius);
 }
 
 .sensor-panel__header {
@@ -147,9 +183,9 @@
 
 .sensor-metric {
     padding: 0.7rem 0.8rem;
-    border-radius: 0.7rem;
-    background: var(--sensor-card-bg); /* subtle dark card */
-    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
 }
 
 .sensor-metric--wide {
@@ -159,16 +195,17 @@
 .sensor-metric__label {
     display: block;
     font-size: 0.72rem;
-    text-transform: uppercase;
+    font-weight: 700;
     letter-spacing: 0.06em;
-    color: var(--sensor-text-medium);
+    text-transform: uppercase;
+    color: #64748b;
     margin-bottom: 0.3rem;
 }
 
 .sensor-metric__value {
     font-size: 1rem;
-    font-weight: 700;
-    color: var(--sensor-text-high);
+    font-weight: 650;
+    color: #172033;
     word-break: break-word;
 }
 
@@ -180,57 +217,45 @@
     border-radius: 999px;
     font-size: 0.78rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
     white-space: nowrap;
-    color: var(--sensor-text-medium);
-    background: rgba(255,255,255,0.02);
 }
 
 .sensor-pill--gps {
-    color: #9be0ff;
+    color: #1e40af;
+    background: #dbeafe;
 }
 
 .sensor-pill--accel {
-    color: #9ef0c9;
+    color: #14532d;
+    background: #dcfce7;
 }
 
 .sensor-pill--neutral {
-    color: var(--sensor-text-medium);
+    color: #475569;
+    background: #e2e8f0;
 }
 
 .sensor-table-wrap {
-    border-radius: 0.8rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.04);
 }
 
 .sensor-table {
     margin-bottom: 0;
-    color: var(--sensor-text-medium);
 }
 
 .sensor-table thead {
-    background: rgba(255,255,255,0.03);
-    color: var(--sensor-text-high);
+    background: #f8fafc;
 }
 
 .sensor-table thead th {
-    border-bottom: 0;
+    border-bottom: 1px solid #e2e8f0;
     font-size: 0.78rem;
+    font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-}
-
-.sensor-table tbody tr {
-    background: transparent;
-}
-
-.sensor-table tbody tr:nth-child(even) {
-    background: rgba(255,255,255,0.01);
-}
-
-.sensor-table tbody td {
-    vertical-align: middle;
+    color: #64748b;
 }
 
 @media (max-width: 991.98px) {
@@ -245,7 +270,7 @@
 
 @media (max-width: 575.98px) {
     .sensor-hero {
-        padding: 0.9rem;
+        padding: 1rem;
     }
 
     .sensor-metrics,

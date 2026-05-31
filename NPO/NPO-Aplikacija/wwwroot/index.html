@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sl">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>NPO-Aplikacija</title>
+    <title>Smart Playgrounds</title>
     <base href="/" />
     <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="app.css" />
@@ -15,7 +15,18 @@
 
     <div class="status-bar-safe-area"></div>
 
-    <div id="app">Loading...</div>
+    <div id="app">
+        <div class="startup" role="status" aria-label="Nalaganje aplikacije">
+            <svg class="startup__mark" viewBox="0 0 456 456" width="88" height="88" aria-hidden="true">
+                <path d="M228 124 C 286 124 326 166 326 220 C 326 280 252 316 228 332 C 204 316 130 280 130 220 C 130 166 170 124 228 124 Z" fill="#ffffff" />
+                <circle cx="228" cy="216" r="46" fill="#22c55e" />
+                <circle cx="228" cy="216" r="18" fill="#ffffff" />
+            </svg>
+            <div class="startup__name">Smart Playgrounds</div>
+            <div class="startup__tag">Zajem in pregled senzorskih meritev</div>
+            <div class="startup__spinner" aria-hidden="true"></div>
+        </div>
+    </div>
 
     <div id="blazor-error-ui" data-nosnippet>
         An unhandled error has occurred.

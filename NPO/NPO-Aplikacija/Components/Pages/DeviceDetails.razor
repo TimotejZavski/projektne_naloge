@@ -9,13 +9,13 @@
 <div class="device-details-page">
     <section class="device-details-header">
         <div>
-            <p class="device-details-kicker">NPO naprave</p>
-            <h1>Pregled posamezne naprave</h1>
-            <p class="device-details-subtitle">Izberi napravo in preglej njeno stanje ter lokalno zajete meritve.</p>
+            <p class="device-details-kicker">Smart Playgrounds</p>
+            <h1>Podrobnosti naprave</h1>
+            <p class="device-details-subtitle">Pregled posameznega senzorja in lokalno zajetih meritev na tej napravi.</p>
         </div>
 
         <button class="btn btn-primary" @onclick="RefreshAsync" disabled="@isLoading">
-            @(isLoading ? "Osvezujem..." : "Osvezi meritve")
+            @(isLoading ? "Osvežujem…" : "Osveži meritve")
         </button>
     </section>
 
@@ -53,7 +53,7 @@
                 <strong>@selectedDevice.LastReading</strong>
             </div>
             <div class="device-metric">
-                <span>Cas meritve</span>
+                <span>Čas meritve</span>
                 <strong>@selectedDevice.LastUpdated</strong>
             </div>
             <div class="device-metric">
@@ -85,7 +85,7 @@
                 <table class="table device-measurements-table">
                     <thead>
                         <tr>
-                            <th>Cas</th>
+                            <th>Čas</th>
                             @foreach (var column in measurementColumns)
                             {
                                 <th>@column</th>
@@ -116,14 +116,14 @@
 
     private readonly IReadOnlyList<DeviceOption> deviceOptions =
     [
-        new("gps", "GPS naprava", "Lokacija in casovni zapis meritev."),
-        new("accelerometer", "Merilnik pospeska", "Meritve gibanja po oseh X, Y in Z.")
+        new("gps", "Lokacija", "GPS sled na igrišču."),
+        new("accelerometer", "Gibanje", "Pospeškometer — meritve gibanja po osi X, Y in Z.")
     ];
 
     private bool isLoading = true;
     private string? errorMessage;
     private string normalizedKind = "gps";
-    private DeviceDetail selectedDevice = DeviceDetail.Empty("GPS naprava", "Lokacija in casovni zapis meritev.");
+    private DeviceDetail selectedDevice = DeviceDetail.Empty("Lokacija", "GPS sled na igrišču.");
     private IReadOnlyList<SensorData> selectedMeasurements = Array.Empty<SensorData>();
     private IReadOnlyList<string> measurementColumns = Array.Empty<string>();
 
@@ -157,7 +157,7 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Meritev ni bilo mogoce osveziti: {ex.Message}";
+            errorMessage = $"Meritev ni bilo mogoče osvežiti: {ex.Message}";
         }
         finally
         {
