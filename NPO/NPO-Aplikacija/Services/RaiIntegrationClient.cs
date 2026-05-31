@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,12 @@ public sealed class RaiIntegrationClient : IRaiIntegrationClient
 
         _httpClient.BaseAddress = _options.BaseUri;
         _httpClient.Timeout = _options.Timeout;
+
+        if (_options.HasAccessToken)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _options.AccessToken);
+        }
     }
 
     public async Task<RaiIntegrationStatus> CheckHealthAsync(CancellationToken cancellationToken = default)
@@ -59,6 +66,14 @@ public sealed class RaiIntegrationClient : IRaiIntegrationClient
 
     public async Task<bool> RegisterDeviceAsync(CancellationToken cancellationToken = default)
     {
+        if (!_options.HasAccessToken)
+        {
+            _logger.LogInformation(
+                "RAI device registration skipped because {EnvironmentName} is not configured.",
+                RaiIntegrationOptions.AccessTokenEnvironmentName);
+            return false;
+        }
+
         var request = new RaiDeviceRegistrationRequest(
             _deviceIdentityProvider.DeviceId,
             _deviceIdentityProvider.DisplayName,
@@ -98,6 +113,11 @@ public sealed class RaiIntegrationClient : IRaiIntegrationClient
         if (payload.Length == 0)
         {
             return RaiSyncResult.Skipped("Ni meritev za sinhronizacijo.");
+        }
+
+        if (!_options.HasAccessToken)
+        {
+            return RaiSyncResult.Skipped("RAI dostopni zeton ni nastavljen.");
         }
 
         try

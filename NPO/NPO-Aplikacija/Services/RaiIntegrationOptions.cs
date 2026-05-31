@@ -3,20 +3,26 @@ namespace NPO_Aplikacija.Services;
 public sealed record RaiIntegrationOptions(
     Uri BaseUri,
     string HealthPath,
-    TimeSpan Timeout)
+    TimeSpan Timeout,
+    string? AccessToken)
 {
     public const string BaseUrlEnvironmentName = "NPO_RAI_BASE_URL";
     public const string TimeoutEnvironmentName = "NPO_RAI_TIMEOUT_SECONDS";
+    public const string AccessTokenEnvironmentName = "NPO_RAI_ACCESS_TOKEN";
+
+    public bool HasAccessToken => !string.IsNullOrWhiteSpace(AccessToken);
 
     public static RaiIntegrationOptions FromEnvironment()
     {
         var baseUrl = Environment.GetEnvironmentVariable(BaseUrlEnvironmentName);
         var timeoutValue = Environment.GetEnvironmentVariable(TimeoutEnvironmentName);
+        var accessToken = Environment.GetEnvironmentVariable(AccessTokenEnvironmentName);
 
         return new RaiIntegrationOptions(
             BaseUri: BuildBaseUri(baseUrl),
             HealthPath: "/health",
-            Timeout: BuildTimeout(timeoutValue));
+            Timeout: BuildTimeout(timeoutValue),
+            AccessToken: string.IsNullOrWhiteSpace(accessToken) ? null : accessToken.Trim());
     }
 
     private static Uri BuildBaseUri(string? value)
