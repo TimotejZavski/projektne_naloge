@@ -1,3 +1,6 @@
+@inject IAuthService AuthService
+@implements IDisposable
+
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">
@@ -33,8 +36,8 @@
         </div>
         <div class="nav-section-label">Račun</div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="register">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Registracija
+            <NavLink class="nav-link" href="profile">
+                <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Profil
             </NavLink>
         </div>
         <div class="nav-section-label nav-section-label--muted">Podpora</div>
@@ -45,3 +48,20 @@
         </div>
     </nav>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AuthService.AuthStateChanged += HandleAuthStateChanged;
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= HandleAuthStateChanged;
+    }
+}

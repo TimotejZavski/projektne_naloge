@@ -72,6 +72,24 @@ const toList = (val, fallback) => {
     .filter(Boolean);
 };
 
+function buildCorsOrigins() {
+  const origins = toList(process.env.CORS_ORIGINS, [
+    "http://localhost:3000",
+    "http://localhost:5000",
+  ]);
+
+  // Render nastavi RENDER_EXTERNAL_URL (npr. https://projektne-naloge.onrender.com).
+  // SPA in API sta na istem hostu -> brskalnik poslje Origin header, ki ga moramo dovoli.
+  if (process.env.RENDER_EXTERNAL_URL) {
+    const renderOrigin = process.env.RENDER_EXTERNAL_URL.replace(/\/$/, "");
+    if (renderOrigin && !origins.includes(renderOrigin)) {
+      origins.push(renderOrigin);
+    }
+  }
+
+  return origins;
+}
+
 module.exports = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: toInt(process.env.PORT, 5000),
@@ -85,10 +103,7 @@ module.exports = {
 
   BCRYPT_SALT_ROUNDS: toInt(process.env.BCRYPT_SALT_ROUNDS, 12),
 
-  CORS_ORIGINS: toList(process.env.CORS_ORIGINS, [
-    "http://localhost:3000",
-    "http://localhost:5000",
-  ]),
+  CORS_ORIGINS: buildCorsOrigins(),
 
   RATE_LIMIT_LOGIN_MAX: toInt(process.env.RATE_LIMIT_LOGIN_MAX, 5),
   RATE_LIMIT_LOGIN_WINDOW_MS: toInt(

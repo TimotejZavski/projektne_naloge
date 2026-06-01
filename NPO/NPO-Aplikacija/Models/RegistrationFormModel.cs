@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace NPO_Aplikacija.Models;
 
-public sealed class RegistrationFormModel
+public sealed class RegistrationFormModel : IValidatableObject
 {
     [Required(ErrorMessage = "Ime je obvezno.")]
     [StringLength(60, MinimumLength = 2, ErrorMessage = "Ime mora imeti med 2 in 60 znaki.")]
@@ -20,9 +20,18 @@ public sealed class RegistrationFormModel
     public string Password { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Potrditev gesla je obvezna.")]
-    [Compare(nameof(Password), ErrorMessage = "Gesli se ne ujemata.")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
     [Range(typeof(bool), "true", "true", ErrorMessage = "Za registracijo morate sprejeti pogoje.")]
     public bool AcceptTerms { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!string.Equals(Password, ConfirmPassword, StringComparison.Ordinal))
+        {
+            yield return new ValidationResult(
+                "Gesli se ne ujemata.",
+                [nameof(ConfirmPassword)]);
+        }
+    }
 }

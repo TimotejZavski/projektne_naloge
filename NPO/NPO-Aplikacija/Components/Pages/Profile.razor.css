@@ -1,0 +1,120 @@
+.profile-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.35rem 1.4rem;
+    border-radius: var(--app-radius);
+    background: var(--app-brand-gradient);
+    box-shadow: var(--app-shadow);
+    color: #ffffff;
+}
+
+.profile-avatar {
+    display: grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    font-size: 1.25rem;
+    font-weight: 750;
+    letter-spacing: 0.02em;
+}
+
+.profile-kicker {
+    margin: 0 0 0.2rem;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.74rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.profile-header h1 {
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 750;
+}
+
+.profile-subtitle {
+    margin: 0.25rem 0 0;
+    color: rgba(255, 255, 255, 0.86);
+}
+
+.profile-panel {
+    padding: 1.25rem 1.35rem;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    background: #ffffff;
+    box-shadow: var(--app-shadow);
+}
+
+.profile-panel h2 {
+    margin: 0 0 1rem;
+    color: var(--app-text-strong);
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.profile-details {
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+}
+
+.profile-details div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.profile-details dt {
+    margin: 0;
+    color: var(--app-text-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.profile-details dd {
+    margin: 0;
+    color: var(--app-text-strong);
+    font-size: 0.98rem;
+    font-weight: 650;
+}
+
+.profile-panel--danger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.profile-panel--danger p {
+    margin: 0.35rem 0 0;
+    color: var(--app-text-muted);
+    font-size: 0.92rem;
+    max-width: 28rem;
+}
+
+.profile-logout {
+    flex: 0 0 auto;
+    min-width: 7.5rem;
+}
+
+@media (max-width: 640.98px) {
+    .profile-panel--danger {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-logout {
+        width: 100%;
+    }
+}

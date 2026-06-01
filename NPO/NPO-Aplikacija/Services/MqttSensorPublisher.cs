@@ -13,17 +13,17 @@ public sealed class MqttSensorPublisher : IMqttSensorPublisher
     private const byte DisconnectPacketType = 0xE0;
 
     private readonly ILogger<MqttSensorPublisher> _logger;
-    private readonly string _deviceId;
+    private readonly IDeviceIdentityService _deviceIdentity;
     private readonly string _clientId;
     private readonly string _host;
     private readonly int _port;
     private readonly string _baseTopic;
 
-    public MqttSensorPublisher(ILogger<MqttSensorPublisher> logger)
+    public MqttSensorPublisher(ILogger<MqttSensorPublisher> logger, IDeviceIdentityService deviceIdentity)
     {
         _logger = logger;
-        _deviceId = NormalizeDeviceId(Environment.MachineName);
-        _clientId = $"npo-{_deviceId}";
+        _deviceIdentity = deviceIdentity;
+        _clientId = $"npo-{_deviceIdentity.DeviceId}";
         _host = "localhost";
         _port = 1883;
         _baseTopic = "smart-playgrounds";
@@ -31,8 +31,8 @@ public sealed class MqttSensorPublisher : IMqttSensorPublisher
 
     public async Task PublishAsync(SensorData sensorData, CancellationToken cancellationToken = default)
     {
-        var topic = MqttSensorMessageFactory.BuildTopic(_baseTopic, _deviceId, sensorData);
-        var payload = MqttSensorMessageFactory.BuildJsonPayload(_deviceId, sensorData);
+        var topic = MqttSensorMessageFactory.BuildTopic(_baseTopic, _deviceIdentity.DeviceId, sensorData);
+        var payload = MqttSensorMessageFactory.BuildJsonPayload(_deviceIdentity.DeviceId, sensorData);
 
         try
         {
@@ -136,17 +136,5 @@ public sealed class MqttSensorPublisher : IMqttSensorPublisher
             yield return (byte)encodedByte;
         }
         while (length > 0);
-    }
-
-    private static string NormalizeDeviceId(string value)
-    {
-        var builder = new StringBuilder();
-
-        foreach (var character in value.ToLowerInvariant())
-        {
-            builder.Append(char.IsLetterOrDigit(character) ? character : '-');
-        }
-
-        return builder.ToString().Trim('-');
     }
 }

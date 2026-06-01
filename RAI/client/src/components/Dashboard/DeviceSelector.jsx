@@ -92,8 +92,8 @@ export default function DeviceSelector({ selectedDeviceId, onChange }) {
 
       {!isLoading && !error && devices.length === 0 && (
         <p className="hint">
-          Ni najdenih naprav. Registriraj napravo prek{" "}
-          <code>POST /api/devices</code>.
+          Ni najdenih naprav. Odprite mobilno aplikacijo in se prijavite z istim
+          računom — telefon se sam registrira kot naprava.
         </p>
       )}
     </div>

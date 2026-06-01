@@ -1,0 +1,28 @@
+@inherits LayoutComponentBase
+
+<div class="auth-shell">
+    <div class="auth-shell__backdrop" aria-hidden="true"></div>
+
+    <div class="auth-shell__frame">
+        <header class="auth-shell__hero">
+            <svg class="auth-shell__mark" viewBox="0 0 456 456" aria-hidden="true">
+                <path d="M228 124 C 286 124 326 166 326 220 C 326 280 252 316 228 332 C 204 316 130 280 130 220 C 130 166 170 124 228 124 Z" fill="#ffffff" />
+                <circle cx="228" cy="216" r="46" fill="#22c55e" />
+                <circle cx="228" cy="216" r="18" fill="#ffffff" />
+            </svg>
+            <p class="auth-shell__kicker">Smart Playgrounds</p>
+            <h1 class="auth-shell__title">Mobilni zajem</h1>
+        </header>
+
+        <div class="auth-shell__card">
+            <nav class="auth-shell__tabs" aria-label="Vrsta dostopa">
+                <NavLink class="auth-shell__tab" href="login" Match="NavLinkMatch.All">Prijava</NavLink>
+                <NavLink class="auth-shell__tab" href="register">Registracija</NavLink>
+            </nav>
+
+            <main class="auth-shell__content">
+                @Body
+            </main>
+        </div>
+    </div>
+</div>

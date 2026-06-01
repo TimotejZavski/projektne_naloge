@@ -55,6 +55,13 @@ function errorHandler(err, req, res, next) {
     message = 'Token je potekel.';
   }
 
+  // CORS zavrnitev (npr. nedovoljen Origin) -> 403, ne 500.
+  if (typeof err.message === "string" && err.message.startsWith("CORS:")) {
+    status = 403;
+    code = "CORS_FORBIDDEN";
+    message = err.message;
+  }
+
   // Logiranje: vse 5xx logiramo, 4xx samo v dev (manj suma).
   if (status >= 500 || env.NODE_ENV !== 'production') {
     // eslint-disable-next-line no-console
