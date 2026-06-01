@@ -113,6 +113,18 @@ Render hosta samo RAI backend brez MQTT brokerja. Polni stack z MQTT tece lokaln
 | [`scripts/init-db.sh`](./scripts/init-db.sh) | inicializacija MongoDB |
 | [`scripts/smoke-test.sh`](./scripts/smoke-test.sh) | preverjanje delovanja |
 
+## Požarni zid (SCRUM-42)
+
+Na **Linux VPS** po `setup.sh` aktiviraj ufw — zapre direkten dostop do Mongo/MQTT/API portov, odpre 80/443 za reverse proxy in SSH.
+
+```bash
+cd SA/firewall
+cp ufw.env.example ufw.env    # ALLOWED_SSH_CIDR = fakultetna IP
+sudo ./ufw-rules.sh
+```
+
+Podrobnosti: [`firewall/README.md`](./firewall/README.md). Render ufw ne potrebuje.
+
 ---
 
 opomba:
