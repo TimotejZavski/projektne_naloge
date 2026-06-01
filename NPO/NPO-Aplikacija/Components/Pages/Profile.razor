@@ -1,6 +1,7 @@
 @page "/profile"
 @inject IAuthService AuthService
 @inject IDeviceRegistrationService DeviceRegistrationService
+@inject IDeviceIdentityService DeviceIdentity
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -14,6 +15,35 @@
             <h1>@AuthService.CurrentUser?.DisplayName</h1>
             <p class="profile-subtitle">@AuthService.CurrentUser?.Email</p>
         </div>
+    </section>
+
+    <section class="profile-panel">
+        <h2>Naprava</h2>
+        <p class="profile-device-copy">
+            Ta telefon se sam registrira na strežniku ob prijavi. Spletni dashboard prikaže napravo pod istim računom.
+        </p>
+
+        <dl class="profile-details">
+            <div>
+                <dt>ID naprave</dt>
+                <dd><code>@DeviceIdentity.DeviceId</code></dd>
+            </div>
+            <div>
+                <dt>Platforma</dt>
+                <dd>@DeviceIdentity.Platform</dd>
+            </div>
+        </dl>
+
+        @if (!string.IsNullOrWhiteSpace(deviceRegistrationMessage))
+        {
+            <div class="profile-device-status @(deviceRegistrationSuccess ? "profile-device-status--ok" : "profile-device-status--error")" role="status">
+                @deviceRegistrationMessage
+            </div>
+        }
+
+        <button type="button" class="btn btn-outline-primary profile-device-sync" disabled="@isRegisteringDevice" @onclick="HandleRegisterDeviceAsync">
+            @(isRegisteringDevice ? "Registriram…" : "Ponovno registriraj napravo")
+        </button>
     </section>
 
     <section class="profile-panel">
@@ -52,6 +82,9 @@
 
 @code {
     private bool isLoggingOut;
+    private bool isRegisteringDevice;
+    private bool deviceRegistrationSuccess;
+    private string? deviceRegistrationMessage;
 
     private string Initials
     {
@@ -84,8 +117,22 @@
 
         if (AuthService.IsAuthenticated && !string.IsNullOrWhiteSpace(AuthService.AccessToken))
         {
-            await DeviceRegistrationService.RegisterCurrentDeviceAsync(AuthService.AccessToken);
+            await HandleRegisterDeviceAsync();
         }
+    }
+
+    private async Task HandleRegisterDeviceAsync()
+    {
+        if (!AuthService.IsAuthenticated || string.IsNullOrWhiteSpace(AuthService.AccessToken))
+        {
+            return;
+        }
+
+        isRegisteringDevice = true;
+        var result = await DeviceRegistrationService.RegisterCurrentDeviceAsync(AuthService.AccessToken);
+        deviceRegistrationSuccess = result.Success;
+        deviceRegistrationMessage = result.Message;
+        isRegisteringDevice = false;
     }
 
     private void HandleAuthStateChanged()

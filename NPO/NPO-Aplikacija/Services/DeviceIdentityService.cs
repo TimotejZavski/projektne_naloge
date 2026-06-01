@@ -77,6 +77,10 @@ public sealed class DeviceIdentityService : IDeviceIdentityService
             builder.Append(char.IsLetterOrDigit(character) ? character : '-');
         }
 
-        return builder.ToString().Trim('-');
+        return builder.ToString().Trim('-') switch
+        {
+            { Length: > 64 } id => id[..64].Trim('-'),
+            var id => id,
+        };
     }
 }

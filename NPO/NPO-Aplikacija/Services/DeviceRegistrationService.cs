@@ -26,16 +26,26 @@ public sealed class DeviceRegistrationService : IDeviceRegistrationService
         _logger = logger;
     }
 
-    public async Task RegisterCurrentDeviceAsync(string accessToken)
+    public async Task<DeviceRegistrationResult> RegisterCurrentDeviceAsync(string accessToken)
     {
+        var deviceId = _deviceIdentity.DeviceId;
+
         if (string.IsNullOrWhiteSpace(accessToken))
         {
-            return;
+            return new DeviceRegistrationResult(false, "Manjka access token.", deviceId);
+        }
+
+        if (deviceId.Length < 3)
+        {
+            return new DeviceRegistrationResult(
+                false,
+                "Identifikator naprave je prekratek.",
+                deviceId);
         }
 
         var payload = new
         {
-            deviceId = _deviceIdentity.DeviceId,
+            deviceId,
             name = _deviceIdentity.DeviceName,
             platform = _deviceIdentity.Platform,
             appVersion = _deviceIdentity.AppVersion,
@@ -53,25 +63,29 @@ public sealed class DeviceRegistrationService : IDeviceRegistrationService
             using var response = await client.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation(
-                    "Naprava {DeviceId} je registrirana na strežniku.",
-                    _deviceIdentity.DeviceId);
-                return;
+                _logger.LogInformation("Naprava {DeviceId} je registrirana na strežniku.", deviceId);
+                return new DeviceRegistrationResult(
+                    true,
+                    "Naprava je povezana z vašim računom.",
+                    deviceId);
             }
 
             var error = await ReadErrorMessageAsync(response);
             _logger.LogWarning(
                 "Registracija naprave {DeviceId} ni uspela ({StatusCode}): {Error}",
-                _deviceIdentity.DeviceId,
+                deviceId,
                 (int)response.StatusCode,
                 error);
+
+            return new DeviceRegistrationResult(false, error, deviceId);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(
-                ex,
-                "Registracija naprave {DeviceId} ni uspela.",
-                _deviceIdentity.DeviceId);
+            _logger.LogWarning(ex, "Registracija naprave {DeviceId} ni uspela.", deviceId);
+            return new DeviceRegistrationResult(
+                false,
+                "Strežnik ni dosegljiv. Preverite internetno povezavo.",
+                deviceId);
         }
     }
 
@@ -90,7 +104,12 @@ public sealed class DeviceRegistrationService : IDeviceRegistrationService
             // Ignore parse errors.
         }
 
-        return $"HTTP {(int)response.StatusCode}";
+        return response.StatusCode switch
+        {
+            System.Net.HttpStatusCode.Conflict => "Ta naprava je že registrirana pod drugim računom.",
+            System.Net.HttpStatusCode.Unauthorized => "Seja je potekla. Prijavite se znova.",
+            _ => $"Registracija ni uspela (HTTP {(int)response.StatusCode}).",
+        };
     }
 
     private sealed class ApiErrorResponse
