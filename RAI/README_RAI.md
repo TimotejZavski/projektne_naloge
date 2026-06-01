@@ -129,6 +129,23 @@ Hitri pregled:
 - `GET  /api/measurements/:id` - posamicna
 - `GET  /api/devices/:id/measurements` - convenience helper
 
+### NPO HTTP integracija
+
+NPO aplikacija lahko uporablja isti REST API za neposredno posiljanje
+lokalno zajetih GPS in pospeskomer meritev. Odjemalec mora najprej pridobiti
+JWT access token prek RAI auth endpointov in ga nastaviti lokalno kot
+`NPO_RAI_ACCESS_TOKEN`.
+
+Pri povezavi NPO uporablja:
+
+- `GET /health` za preverjanje dosegljivosti,
+- `POST /api/devices` za idempotentno registracijo naprave,
+- `POST /api/measurements/batch` za posiljanje meritev.
+
+Podatki ostanejo v obstojeci `sensor_measurements` zbirki z enako shemo kot
+drugi HTTP vnosi, zato ta integracija ne zahteva locenih RAI migracij ali
+sprememb v scraper toku.
+
 ## GPS tok podatkov med NPO in RAI
 
 NPO aplikacija objavlja GPS meritve prek MQTT topica:

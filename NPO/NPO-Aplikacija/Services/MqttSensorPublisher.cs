@@ -13,17 +13,19 @@ public sealed class MqttSensorPublisher : IMqttSensorPublisher
     private const byte DisconnectPacketType = 0xE0;
 
     private readonly ILogger<MqttSensorPublisher> _logger;
-    private readonly IDeviceIdentityService _deviceIdentity;
+    private readonly string _deviceId;
     private readonly string _clientId;
     private readonly string _host;
     private readonly int _port;
     private readonly string _baseTopic;
 
-    public MqttSensorPublisher(ILogger<MqttSensorPublisher> logger, IDeviceIdentityService deviceIdentity)
+    public MqttSensorPublisher(
+        ILogger<MqttSensorPublisher> logger,
+        IDeviceIdentityProvider deviceIdentityProvider)
     {
         _logger = logger;
-        _deviceIdentity = deviceIdentity;
-        _clientId = $"npo-{_deviceIdentity.DeviceId}";
+        _deviceId = deviceIdentityProvider.DeviceId;
+        _clientId = deviceIdentityProvider.ClientId;
         _host = "localhost";
         _port = 1883;
         _baseTopic = "smart-playgrounds";
@@ -31,8 +33,8 @@ public sealed class MqttSensorPublisher : IMqttSensorPublisher
 
     public async Task PublishAsync(SensorData sensorData, CancellationToken cancellationToken = default)
     {
-        var topic = MqttSensorMessageFactory.BuildTopic(_baseTopic, _deviceIdentity.DeviceId, sensorData);
-        var payload = MqttSensorMessageFactory.BuildJsonPayload(_deviceIdentity.DeviceId, sensorData);
+        var topic = MqttSensorMessageFactory.BuildTopic(_baseTopic, _deviceId, sensorData);
+        var payload = MqttSensorMessageFactory.BuildJsonPayload(_deviceId, sensorData);
 
         try
         {
