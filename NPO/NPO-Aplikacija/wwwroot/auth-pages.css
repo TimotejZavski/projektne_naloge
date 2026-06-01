@@ -1,0 +1,189 @@
+.auth-shell {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(1.25rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    background: #0f172a;
+    overflow-x: clip;
+}
+
+.auth-shell__backdrop {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 18% 18%, rgba(37, 99, 235, 0.32), transparent 44%),
+        radial-gradient(circle at 82% 8%, rgba(34, 197, 94, 0.16), transparent 36%),
+        linear-gradient(165deg, #0f172a 0%, #1e3a8a 52%, #172554 100%);
+    pointer-events: none;
+}
+
+.auth-shell__frame {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 24.5rem);
+    display: grid;
+    gap: 1.15rem;
+}
+
+.auth-shell__hero {
+    display: grid;
+    justify-items: center;
+    gap: 0.3rem;
+    text-align: center;
+    color: #ffffff;
+}
+
+.auth-shell__mark {
+    width: 4rem;
+    height: 4rem;
+    filter: drop-shadow(0 10px 24px rgba(15, 23, 42, 0.35));
+}
+
+.auth-shell__kicker {
+    margin: 0.25rem 0 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.auth-shell__title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+}
+
+.auth-shell__card {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 1rem;
+    background: #ffffff;
+    box-shadow: 0 24px 48px -28px rgba(15, 23, 42, 0.75);
+}
+
+.auth-shell__tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 0.35rem;
+    border-bottom: 1px solid var(--app-border);
+    background: #f8fafc;
+}
+
+.auth-shell__tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.65rem;
+    border: none;
+    border-radius: 0.65rem;
+    color: #64748b !important;
+    font-size: 0.92rem;
+    font-weight: 650;
+    text-decoration: none !important;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-shell__tab:hover,
+.auth-shell__tab:focus {
+    color: #334155 !important;
+    text-decoration: none !important;
+}
+
+.auth-shell__tab.active {
+    color: #1e3a8a !important;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 6px 16px -8px rgba(30, 64, 175, 0.35);
+}
+
+.auth-shell__content {
+    padding: 1.15rem 1.2rem 1.25rem;
+}
+
+.auth-form {
+    display: grid;
+    gap: 0.15rem;
+}
+
+.auth-field {
+    display: grid;
+    gap: 0.35rem;
+    margin-bottom: 0.8rem;
+}
+
+.auth-field label {
+    color: #334155;
+    font-size: 0.86rem;
+    font-weight: 650;
+}
+
+.auth-field input:not([type="checkbox"]) {
+    width: 100%;
+    min-height: 2.85rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-sm);
+    background: #ffffff;
+    color: var(--app-text);
+    font-size: 1rem;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.auth-field input:not([type="checkbox"]):focus {
+    outline: none;
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 0.2rem rgba(147, 197, 253, 0.45);
+}
+
+.auth-form input.valid.modified:not([type="checkbox"]),
+.auth-form input.invalid:not([type="checkbox"]) {
+    outline: none;
+}
+
+.auth-form .validation-message {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.85rem;
+}
+
+.auth-alert {
+    margin-bottom: 0.85rem;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid #fecaca;
+    border-radius: var(--app-radius-sm);
+    color: #7f1d1d;
+    background: #fef2f2;
+    font-weight: 650;
+    font-size: 0.92rem;
+}
+
+.auth-terms {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin: 0.15rem 0 0.95rem;
+}
+
+.auth-terms input {
+    margin-top: 0.2rem;
+    flex: 0 0 auto;
+}
+
+.auth-terms label {
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.auth-submit {
+    width: 100%;
+    min-height: 2.9rem;
+    margin-top: 0.25rem;
+}

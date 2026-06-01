@@ -1,0 +1,62 @@
+@page "/login"
+@layout AuthLayout
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Prijava</PageTitle>
+
+<EditForm Model="@loginModel" OnValidSubmit="@HandleValidSubmitAsync" class="auth-form">
+    <DataAnnotationsValidator />
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="auth-alert" role="alert">@errorMessage</div>
+    }
+
+    <div class="auth-field">
+        <label for="email">E-poštni naslov</label>
+        <input id="email"
+               type="email"
+               autocomplete="email"
+               value="@loginModel.Email"
+               @oninput="@(e => loginModel.Email = e.Value?.ToString() ?? string.Empty)" />
+        <ValidationMessage For="@(() => loginModel.Email)" />
+    </div>
+
+    <div class="auth-field">
+        <label for="password">Geslo</label>
+        <input id="password"
+               type="password"
+               autocomplete="current-password"
+               value="@loginModel.Password"
+               @oninput="@(e => loginModel.Password = e.Value?.ToString() ?? string.Empty)" />
+        <ValidationMessage For="@(() => loginModel.Password)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary auth-submit" disabled="@isSubmitting">
+        @(isSubmitting ? "Prijava..." : "Prijava")
+    </button>
+</EditForm>
+
+@code {
+    private LoginFormModel loginModel = new();
+    private bool isSubmitting;
+    private string? errorMessage;
+
+    private async Task HandleValidSubmitAsync()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+
+        var result = await AuthService.LoginAsync(loginModel);
+
+        if (result.Success)
+        {
+            Navigation.NavigateTo("/", replace: true);
+            return;
+        }
+
+        errorMessage = result.Message;
+        isSubmitting = false;
+    }
+}

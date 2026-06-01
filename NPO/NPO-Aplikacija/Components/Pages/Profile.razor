@@ -1,0 +1,154 @@
+@page "/profile"
+@inject IAuthService AuthService
+@inject IDeviceRegistrationService DeviceRegistrationService
+@inject IDeviceIdentityService DeviceIdentity
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTitle>Profil</PageTitle>
+
+<div class="profile-page">
+    <section class="profile-header">
+        <div class="profile-avatar" aria-hidden="true">@Initials</div>
+        <div>
+            <p class="profile-kicker">Račun</p>
+            <h1>@AuthService.CurrentUser?.DisplayName</h1>
+            <p class="profile-subtitle">@AuthService.CurrentUser?.Email</p>
+        </div>
+    </section>
+
+    <section class="profile-panel">
+        <h2>Naprava</h2>
+        <p class="profile-device-copy">
+            Ta telefon se sam registrira na strežniku ob prijavi. Spletni dashboard prikaže napravo pod istim računom.
+        </p>
+
+        <dl class="profile-details">
+            <div>
+                <dt>ID naprave</dt>
+                <dd><code>@DeviceIdentity.DeviceId</code></dd>
+            </div>
+            <div>
+                <dt>Platforma</dt>
+                <dd>@DeviceIdentity.Platform</dd>
+            </div>
+        </dl>
+
+        @if (!string.IsNullOrWhiteSpace(deviceRegistrationMessage))
+        {
+            <div class="profile-device-status @(deviceRegistrationSuccess ? "profile-device-status--ok" : "profile-device-status--error")" role="status">
+                @deviceRegistrationMessage
+            </div>
+        }
+
+        <button type="button" class="btn btn-outline-primary profile-device-sync" disabled="@isRegisteringDevice" @onclick="HandleRegisterDeviceAsync">
+            @(isRegisteringDevice ? "Registriram…" : "Ponovno registriraj napravo")
+        </button>
+    </section>
+
+    <section class="profile-panel">
+        <h2>Podatki o računu</h2>
+
+        <dl class="profile-details">
+            <div>
+                <dt>Ime</dt>
+                <dd>@AuthService.CurrentUser?.DisplayName</dd>
+            </div>
+            <div>
+                <dt>E-pošta</dt>
+                <dd>@AuthService.CurrentUser?.Email</dd>
+            </div>
+            <div>
+                <dt>Vloga</dt>
+                <dd>@RoleLabel</dd>
+            </div>
+            <div>
+                <dt>Član od</dt>
+                <dd>@MemberSinceLabel</dd>
+            </div>
+        </dl>
+    </section>
+
+    <section class="profile-panel profile-panel--danger">
+        <div>
+            <h2>Odjava</h2>
+            <p>Odjava odstrani dostop do aplikacije na tej napravi. Podatki na strežniku ostanejo shranjeni.</p>
+        </div>
+        <button type="button" class="btn btn-outline-danger profile-logout" disabled="@isLoggingOut" @onclick="HandleLogoutAsync">
+            @(isLoggingOut ? "Odjavljam…" : "Odjava")
+        </button>
+    </section>
+</div>
+
+@code {
+    private bool isLoggingOut;
+    private bool isRegisteringDevice;
+    private bool deviceRegistrationSuccess;
+    private string? deviceRegistrationMessage;
+
+    private string Initials
+    {
+        get
+        {
+            var name = AuthService.CurrentUser?.DisplayName?.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return "?";
+            }
+
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length >= 2
+                ? $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[^1][0])}"
+                : char.ToUpper(name[0]).ToString();
+        }
+    }
+
+    private string RoleLabel => AuthService.CurrentUser?.Role switch
+    {
+        "admin" => "Skrbnik",
+        _ => "Uporabnik"
+    };
+
+    private string MemberSinceLabel => AuthService.CurrentUser?.CreatedAtUtc.ToLocalTime().ToString("dd. MM. yyyy") ?? "—";
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthService.AuthStateChanged += HandleAuthStateChanged;
+
+        if (AuthService.IsAuthenticated && !string.IsNullOrWhiteSpace(AuthService.AccessToken))
+        {
+            await HandleRegisterDeviceAsync();
+        }
+    }
+
+    private async Task HandleRegisterDeviceAsync()
+    {
+        if (!AuthService.IsAuthenticated || string.IsNullOrWhiteSpace(AuthService.AccessToken))
+        {
+            return;
+        }
+
+        isRegisteringDevice = true;
+        var result = await DeviceRegistrationService.RegisterCurrentDeviceAsync(AuthService.AccessToken);
+        deviceRegistrationSuccess = result.Success;
+        deviceRegistrationMessage = result.Message;
+        isRegisteringDevice = false;
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleLogoutAsync()
+    {
+        isLoggingOut = true;
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login", replace: true);
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= HandleAuthStateChanged;
+    }
+}

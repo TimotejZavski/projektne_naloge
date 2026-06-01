@@ -1,96 +1,88 @@
 @page "/register"
-@inject IUserRegistrationService UserRegistrationService
+@layout AuthLayout
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
 
 <PageTitle>Registracija</PageTitle>
 
-<div class="register-page">
-    <section class="register-panel">
-        <div class="register-copy">
-            <p class="register-kicker">Smart Playgrounds</p>
-            <h1>Registracija</h1>
-            <p>
-                Ustvarite račun za mobilni zajem na igrišču. Podatki se povežejo z vašim profilom na spletni nadzorni plošči.
-            </p>
-        </div>
+<EditForm Model="@registrationModel" OnValidSubmit="@HandleValidSubmitAsync" class="auth-form">
+    <DataAnnotationsValidator />
 
-        <EditForm Model="@registrationModel" OnValidSubmit="@HandleValidSubmitAsync" class="register-form">
-            <DataAnnotationsValidator />
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="auth-alert" role="alert">@errorMessage</div>
+    }
 
-            @if (!string.IsNullOrWhiteSpace(successMessage))
-            {
-                <div class="alert alert-success" role="status">@successMessage</div>
-            }
+    <div class="auth-field">
+        <label for="displayName">Ime</label>
+        <input id="displayName"
+               type="text"
+               autocomplete="name"
+               value="@registrationModel.DisplayName"
+               @oninput="@(e => registrationModel.DisplayName = e.Value?.ToString() ?? string.Empty)" />
+        <ValidationMessage For="@(() => registrationModel.DisplayName)" />
+    </div>
 
-            @if (!string.IsNullOrWhiteSpace(errorMessage))
-            {
-                <div class="alert alert-danger" role="alert">@errorMessage</div>
-            }
+    <div class="auth-field">
+        <label for="email">E-poštni naslov</label>
+        <input id="email"
+               type="email"
+               autocomplete="email"
+               value="@registrationModel.Email"
+               @oninput="@(e => registrationModel.Email = e.Value?.ToString() ?? string.Empty)" />
+        <ValidationMessage For="@(() => registrationModel.Email)" />
+    </div>
 
-            <ValidationSummary />
+    <div class="auth-field">
+        <label for="password">Geslo</label>
+        <input id="password"
+               type="password"
+               autocomplete="new-password"
+               value="@registrationModel.Password"
+               @oninput="@(e => registrationModel.Password = e.Value?.ToString() ?? string.Empty)" />
+        <ValidationMessage For="@(() => registrationModel.Password)" />
+    </div>
 
-            <div class="mb-3">
-                <label for="displayName" class="form-label">Ime</label>
-                <InputText id="displayName" class="form-control" @bind-Value="registrationModel.DisplayName" />
-                <ValidationMessage For="@(() => registrationModel.DisplayName)" />
-            </div>
+    <div class="auth-field">
+        <label for="confirmPassword">Potrditev gesla</label>
+        <input id="confirmPassword"
+               type="password"
+               autocomplete="new-password"
+               value="@registrationModel.ConfirmPassword"
+               @oninput="@(e => registrationModel.ConfirmPassword = e.Value?.ToString() ?? string.Empty)" />
+        <ValidationMessage For="@(() => registrationModel.ConfirmPassword)" />
+    </div>
 
-            <div class="mb-3">
-                <label for="email" class="form-label">E-postni naslov</label>
-                <InputText id="email" type="email" class="form-control" @bind-Value="registrationModel.Email" />
-                <ValidationMessage For="@(() => registrationModel.Email)" />
-            </div>
+    <div class="auth-terms">
+        <InputCheckbox id="acceptTerms" @bind-Value="registrationModel.AcceptTerms" />
+        <label for="acceptTerms">Sprejemam pogoje uporabe aplikacije.</label>
+    </div>
+    <ValidationMessage For="@(() => registrationModel.AcceptTerms)" />
 
-            <div class="mb-3">
-                <label for="password" class="form-label">Geslo</label>
-                <InputText id="password" type="password" class="form-control" @bind-Value="registrationModel.Password" />
-                <ValidationMessage For="@(() => registrationModel.Password)" />
-            </div>
-
-            <div class="mb-3">
-                <label for="confirmPassword" class="form-label">Potrditev gesla</label>
-                <InputText id="confirmPassword" type="password" class="form-control" @bind-Value="registrationModel.ConfirmPassword" />
-                <ValidationMessage For="@(() => registrationModel.ConfirmPassword)" />
-            </div>
-
-            <div class="form-check register-terms">
-                <InputCheckbox id="acceptTerms" class="form-check-input" @bind-Value="registrationModel.AcceptTerms" />
-                <label for="acceptTerms" class="form-check-label">
-                    Sprejemam pogoje uporabe aplikacije.
-                </label>
-                <ValidationMessage For="@(() => registrationModel.AcceptTerms)" />
-            </div>
-
-            <button type="submit" class="btn btn-primary register-submit" disabled="@isSubmitting">
-                @(isSubmitting ? "Shranjevanje..." : "Registriraj uporabnika")
-            </button>
-        </EditForm>
-    </section>
-</div>
+    <button type="submit" class="btn btn-primary auth-submit" disabled="@isSubmitting">
+        @(isSubmitting ? "Shranjevanje..." : "Ustvari račun")
+    </button>
+</EditForm>
 
 @code {
     private RegistrationFormModel registrationModel = new();
     private bool isSubmitting;
-    private string? successMessage;
     private string? errorMessage;
 
     private async Task HandleValidSubmitAsync()
     {
         isSubmitting = true;
-        successMessage = null;
         errorMessage = null;
 
-        var result = await UserRegistrationService.RegisterAsync(registrationModel);
+        var result = await AuthService.RegisterAsync(registrationModel);
 
         if (result.Success)
         {
-            successMessage = result.Message;
-            registrationModel = new RegistrationFormModel();
-        }
-        else
-        {
-            errorMessage = result.Message;
+            Navigation.NavigateTo("/", replace: true);
+            return;
         }
 
+        errorMessage = result.Message;
         isSubmitting = false;
     }
 }

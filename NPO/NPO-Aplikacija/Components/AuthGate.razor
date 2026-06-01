@@ -1,0 +1,83 @@
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@implements IDisposable
+
+@if (!_ready)
+{
+    <div class="startup" role="status" aria-label="Nalaganje aplikacije">
+        <svg class="startup__mark" viewBox="0 0 456 456" width="88" height="88" aria-hidden="true">
+            <path d="M228 124 C 286 124 326 166 326 220 C 326 280 252 316 228 332 C 204 316 130 280 130 220 C 130 166 170 124 228 124 Z" fill="#ffffff" />
+            <circle cx="228" cy="216" r="46" fill="#22c55e" />
+            <circle cx="228" cy="216" r="18" fill="#ffffff" />
+        </svg>
+        <div class="startup__name">Smart Playgrounds</div>
+        <div class="startup__tag">Preverjam vašo sejo…</div>
+        <div class="startup__spinner" aria-hidden="true"></div>
+    </div>
+}
+else if (_redirectTarget is not null)
+{
+    <RedirectTo Uri="@_redirectTarget" />
+}
+else
+{
+    <RouteView RouteData="@RouteData" DefaultLayout="@DefaultLayout" />
+    <FocusOnNavigate RouteData="@RouteData" Selector="h1" />
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public RouteData RouteData { get; set; } = default!;
+
+    [Parameter]
+    public Type DefaultLayout { get; set; } = typeof(MainLayout);
+
+    private bool _ready;
+    private string? _redirectTarget;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsInitialized)
+        {
+            await AuthService.InitializeAsync();
+        }
+
+        AuthService.AuthStateChanged += HandleAuthStateChanged;
+        _ready = true;
+        UpdateRedirectTarget();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_ready)
+        {
+            UpdateRedirectTarget();
+        }
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        UpdateRedirectTarget();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateRedirectTarget()
+    {
+        var isAuthPage = IsAuthPage(RouteData.PageType);
+
+        _redirectTarget = AuthService.IsAuthenticated switch
+        {
+            true when isAuthPage => "/",
+            false when !isAuthPage => "/login",
+            _ => null
+        };
+    }
+
+    private static bool IsAuthPage(Type pageType) =>
+        pageType == typeof(Pages.Login) || pageType == typeof(Pages.Register);
+
+    public void Dispose()
+    {
+        AuthService.AuthStateChanged -= HandleAuthStateChanged;
+    }
+}

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NPO_Aplikacija.Services;
 
 namespace NPO_Aplikacija
@@ -17,13 +17,22 @@ namespace NPO_Aplikacija
 
             builder.Services.AddMauiBlazorWebView();
 
+            builder.Services.AddHttpClient(ApiSettings.HttpClientName, client =>
+            {
+                client.BaseAddress = new Uri(ApiSettings.BaseUrl);
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+            builder.Services.AddSingleton<IAuthService, AuthService>();
+            builder.Services.AddSingleton<IDeviceIdentityService, DeviceIdentityService>();
+            builder.Services.AddSingleton<IDeviceRegistrationService, DeviceRegistrationService>();
+
             // Registracija senzorskih storitev
             builder.Services.AddSingleton<IGPSSensor, GPSSensor>();
             builder.Services.AddSingleton<IAccelerometerSensor, AccelerometerSensor>();
             builder.Services.AddSingleton<ISensorService, SensorService>();
             builder.Services.AddSingleton<ISensorDataRepository, SensorDataRepository>();
             builder.Services.AddSingleton<IMqttSensorPublisher, MqttSensorPublisher>();
-            builder.Services.AddSingleton<IUserRegistrationService, UserRegistrationService>();
 
 #if DEBUG
     		builder.Services.AddBlazorWebViewDeveloperTools();

@@ -31,6 +31,30 @@ a, .btn-link {
     color: var(--app-primary);
 }
 
+.sidebar .nav-link,
+.sidebar .nav-scrollable a,
+.auth-shell__tab {
+    text-decoration: none;
+}
+
+.sidebar .nav-scrollable a {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.sidebar .nav-scrollable a.active {
+    color: #ffffff;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-scrollable a:hover,
+.sidebar .nav-scrollable a:focus,
+.sidebar .nav-scrollable a.active,
+.auth-shell__tab:hover,
+.auth-shell__tab:focus,
+.auth-shell__tab.active {
+    text-decoration: none;
+}
+
 .btn {
     border-radius: 0.55rem;
     font-weight: 650;
