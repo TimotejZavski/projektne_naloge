@@ -14,3 +14,26 @@ Preverjanja:
 Workflow ne vsebuje produkcijskih skrivnosti in ne izvaja samodejnega deploya.
 Deploy na Render ali drugo okolje naj ostane locen korak z nastavitvami v
 zunanjem okolju.
+
+## publish.yml
+
+Sprozi se **po uspesni izvedbi** `ci.yml` na `main` veji. Zgradi in objavi
+Docker slike na Docker Hub:
+
+- `smart-playgrounds/rai-backend` — RAI backend (Node.js)
+- `smart-playgrounds/sap-backup` — SA backup servis (Node.js + mongodump)
+
+Vsaka slika dobi dve oznaki:
+
+- `latest` — zadnja uspesna izdaja
+- `git-short-sha` (npr. `a1b2c3d`) — natancen commit
+
+### Potrebni GitHub secrets
+
+| Secret            | Opis                                  |
+|-------------------|---------------------------------------|
+| `DOCKER_USERNAME` | Docker Hub uporabnisko ime            |
+| `DOCKER_PASSWORD` | Docker Hub access token (ali geslo)   |
+
+Ce ne zelis samodejne objave, preprosto ne nastavi teh secretov — workflow
+se bo sprozil, a padel pri login koraku.

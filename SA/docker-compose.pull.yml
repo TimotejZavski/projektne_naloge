@@ -1,0 +1,18 @@
+# ============================================================
+# Smart Playgrounds - pull override za vnaprej zgrajene slike
+# ============================================================
+#
+# Uporaba:
+#   docker compose -f docker-compose.yml -f docker-compose.pull.yml up -d
+#
+# Ta override zamenja lokalno gradnjo backend-a s potegom
+# vnaprej objavljene slike iz Docker Hub-a.
+#
+# Predpogoj: slika smart-playgrounds/sap-backup obstaja na
+# Docker Hub (objavi jo .github/workflows/publish.yml).
+# ============================================================
+
+services:
+  backend:
+    build: null
+    image: smart-playgrounds/rai-backend:latest

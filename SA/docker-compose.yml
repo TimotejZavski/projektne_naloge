@@ -12,6 +12,9 @@
 #   cp .env.example .env    # in nastavi JWT sekrete
 #   docker compose up -d --build
 #
+# Uporaba vnaprej zgrajenih slik (ce so objavljene na Docker Hub):
+#   docker compose -f docker-compose.yml -f docker-compose.pull.yml up -d
+#
 # Preverjanje:
 #   docker compose ps
 #   curl http://localhost:5000/health
@@ -37,7 +40,8 @@ services:
     networks:
       - smart-playgrounds
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      test:
+        ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -71,6 +75,10 @@ services:
   # ----------------------------------------------------------
   # RAI backend (Node.js + Express + MQTT listener)
   # ----------------------------------------------------------
+  #
+  # Objavljena slika: smart-playgrounds/rai-backend
+  # Lokalna gradnja:  docker compose build backend
+  #
   backend:
     build:
       context: ../RAI/server
