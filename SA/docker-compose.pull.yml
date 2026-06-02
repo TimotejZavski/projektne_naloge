@@ -15,4 +15,4 @@
 services:
   backend:
     build: null
-    image: smart-playgrounds/rai-backend:latest
+    image: timotejzavski/rai-backend:latest
