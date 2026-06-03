@@ -50,27 +50,62 @@ jobs:
         run: |
           SHA="${{ github.event.workflow_run.head_commit.id }}"
           SHORT_SHA="${SHA:0:7}"
-          NS="${{ env.IMAGE_NAMESPACE }}"
-          echo "rai_tags=$NS/rai-backend:latest,$NS/rai-backend:${SHORT_SHA}" >> "$GITHUB_OUTPUT"
-          echo "backup_tags=$NS/sap-backup:latest,$NS/sap-backup:${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: Diagnostic - verify secrets
+      - name: Validate Docker Hub secrets
         shell: bash
         run: |
-          echo "Username length: ${#DOCKER_USER}"
-          echo "Password length: ${#DOCKER_PASS}"
-          echo "Username first 3 chars: ${DOCKER_USER:0:3}"
-          echo "Password starts with: ${DOCKER_PASS:0:8}"
+          set -euo pipefail
+
+          failed=0
+
+          if [ -z "$DOCKER_USER" ]; then
+            echo "::error::DOCKER_USERNAME is empty. Check the d_deploy environment secret."
+            failed=1
+          fi
+
+          if [ -z "$DOCKER_PASS" ]; then
+            echo "::error::DOCKER_PASSWORD is empty. Check the d_deploy environment secret."
+            failed=1
+          fi
+
+          if [[ "$DOCKER_USER" == *[[:space:]]* ]]; then
+            echo "::error::DOCKER_USERNAME contains whitespace. It must be the exact Docker Hub username, for example timotejzavski."
+            failed=1
+          fi
+
+          if [[ "$DOCKER_PASS" == *[[:space:]]* ]]; then
+            echo "::error::DOCKER_PASSWORD contains whitespace/newlines. Paste only the Docker Hub access token value, without quotes or line breaks."
+            failed=1
+          fi
+
+          case "$DOCKER_USER" in
+            \"*|*\"|\'*|*\')
+              echo "::error::DOCKER_USERNAME appears to include quote characters. Remove quotes from the GitHub secret value."
+              failed=1
+              ;;
+          esac
+
+          case "$DOCKER_PASS" in
+            \"*|*\"|\'*|*\')
+              echo "::error::DOCKER_PASSWORD appears to include quote characters. Remove quotes from the GitHub secret value."
+              failed=1
+              ;;
+          esac
+
+          echo "Docker username length: ${#DOCKER_USER}"
+          echo "Docker token length: ${#DOCKER_PASS}"
+
+          exit "$failed"
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to Docker Hub
-        run: |
-          printf '%s' "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-        env:
-          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       # --------------------------------------------------
       # RAI backend
@@ -78,8 +113,13 @@ jobs:
       - name: Build and push rai-backend
         shell: bash
         run: |
-          docker build -t ${{ steps.tags.outputs.rai_tags }} -f RAI/server/Dockerfile RAI/server
-          docker push --all-tags ${{ env.IMAGE_NAMESPACE }}/rai-backend
+          SHORT_SHA="${{ steps.tags.outputs.short_sha }}"
+          docker build \
+            -t "${{ env.IMAGE_NAMESPACE }}/rai-backend:latest" \
+            -t "${{ env.IMAGE_NAMESPACE }}/rai-backend:${SHORT_SHA}" \
+            -f RAI/server/Dockerfile RAI/server
+          docker push "${{ env.IMAGE_NAMESPACE }}/rai-backend:latest"
+          docker push "${{ env.IMAGE_NAMESPACE }}/rai-backend:${SHORT_SHA}"
 
       # --------------------------------------------------
       # SA backup
@@ -87,8 +127,13 @@ jobs:
       - name: Build and push sap-backup
         shell: bash
         run: |
-          docker build -t ${{ steps.tags.outputs.backup_tags }} -f SA/backup/Dockerfile SA/backup
-          docker push --all-tags ${{ env.IMAGE_NAMESPACE }}/sap-backup
+          SHORT_SHA="${{ steps.tags.outputs.short_sha }}"
+          docker build \
+            -t "${{ env.IMAGE_NAMESPACE }}/sap-backup:latest" \
+            -t "${{ env.IMAGE_NAMESPACE }}/sap-backup:${SHORT_SHA}" \
+            -f SA/backup/Dockerfile SA/backup
+          docker push "${{ env.IMAGE_NAMESPACE }}/sap-backup:latest"
+          docker push "${{ env.IMAGE_NAMESPACE }}/sap-backup:${SHORT_SHA}"
 
       # --------------------------------------------------
       # Koncni status
@@ -98,5 +143,7 @@ jobs:
         run: |
           echo "## Objavljene slike" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`${{ steps.tags.outputs.rai_tags }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`${{ steps.tags.outputs.backup_tags }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.IMAGE_NAMESPACE }}/rai-backend:latest\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.IMAGE_NAMESPACE }}/rai-backend:${{ steps.tags.outputs.short_sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.IMAGE_NAMESPACE }}/sap-backup:latest\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ env.IMAGE_NAMESPACE }}/sap-backup:${{ steps.tags.outputs.short_sha }}\`" >> "$GITHUB_STEP_SUMMARY"
