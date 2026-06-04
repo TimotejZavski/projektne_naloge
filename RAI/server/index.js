@@ -8,11 +8,14 @@
  *   4. graceful shutdown na SIGINT/SIGTERM
  */
 
-const env = require('./src/config/env');
-const { connectDatabase, disconnectDatabase } = require('./src/config/database');
-const createApp = require('./src/app');
-const MqttListener = require('./src/services/MqttListener');
-const DataAggregationScheduler = require('./src/services/DataAggregationScheduler');
+const env = require("./src/config/env");
+const {
+  connectDatabase,
+  disconnectDatabase,
+} = require("./src/config/database");
+const createApp = require("./src/app");
+const MqttListener = require("./src/services/MqttListener");
+const DataAggregationScheduler = require("./src/services/DataAggregationScheduler");
 
 let server;
 let mqttListener;
@@ -25,7 +28,9 @@ async function start() {
 
     server = app.listen(env.PORT, () => {
       // eslint-disable-next-line no-console
-      console.log(`[server] RAI backend posluha na http://localhost:${env.PORT}`);
+      console.log(
+        `[server] RAI backend posluha na http://localhost:${env.PORT}`,
+      );
       console.log(`[server] NODE_ENV=${env.NODE_ENV}`);
     });
 
@@ -42,15 +47,29 @@ async function start() {
       }
     } else {
       try {
-      mqttListener = new MqttListener();
-      await mqttListener.connect();
-      // eslint-disable-next-line no-console
-      console.log('[server] MQTT listener started');
+        mqttListener = new MqttListener();
+        await mqttListener.connect();
+        // eslint-disable-next-line no-console
+        console.log("[server] MQTT listener started");
 
-      // Očisti deduplikacijski cache vsake 5 minut
-      setInterval(() => {
-        mqttListener.cleanDeduplicationCache();
-      }, 5 * 60 * 1000);
+        // Očisti deduplikacijski cache vsake 5 minut
+        setInterval(
+          () => {
+            mqttListener.cleanDeduplicationCache();
+          },
+          5 * 60 * 1000,
+        );
+
+        // SCRUM-47: odstrani zastarele naprave vsake 3 minute
+        setInterval(
+          () => {
+            mqttListener.expireStaleDevices();
+          },
+          3 * 60 * 1000,
+        );
+
+        // Posreduj mqttListener v app, da ga lahko uporabljajo rute
+        app.set("mqttListener", mqttListener);
       } catch (mqttErr) {
         // eslint-disable-next-line no-console
         console.warn(
@@ -66,15 +85,18 @@ async function start() {
       aggregationScheduler = new DataAggregationScheduler();
       await aggregationScheduler.start();
       // eslint-disable-next-line no-console
-      console.log('[server] Data aggregation scheduler started');
+      console.log("[server] Data aggregation scheduler started");
     } catch (aggErr) {
       // eslint-disable-next-line no-console
-      console.warn('[server] Data aggregation scheduler failed to start:', aggErr.message);
+      console.warn(
+        "[server] Data aggregation scheduler failed to start:",
+        aggErr.message,
+      );
       // Ne prekini servera
     }
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error('[FATAL] Zagon strezniku ni uspel:', err);
+    console.error("[FATAL] Zagon strezniku ni uspel:", err);
     process.exit(1);
   }
 }
@@ -89,7 +111,10 @@ async function shutdown(signal) {
       await aggregationScheduler.stop();
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.warn('[server] Error stopping aggregation scheduler:', err.message);
+      console.warn(
+        "[server] Error stopping aggregation scheduler:",
+        err.message,
+      );
     }
   }
 
@@ -99,7 +124,7 @@ async function shutdown(signal) {
       await mqttListener.disconnect();
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.warn('[server] Error disconnecting MQTT:', err.message);
+      console.warn("[server] Error disconnecting MQTT:", err.message);
     }
   }
 
@@ -108,16 +133,16 @@ async function shutdown(signal) {
   }
   await disconnectDatabase();
   // eslint-disable-next-line no-console
-  console.log('[server] Cisto zaustavljen.');
+  console.log("[server] Cisto zaustavljen.");
   process.exit(0);
 }
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('unhandledRejection', (reason) => {
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("unhandledRejection", (reason) => {
   // eslint-disable-next-line no-console
-  console.error('[unhandledRejection]', reason);
-  shutdown('unhandledRejection');
+  console.error("[unhandledRejection]", reason);
+  shutdown("unhandledRejection");
 });
 
 start();
