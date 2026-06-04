@@ -8,17 +8,22 @@
  * UI komponente potem berejo .device / .devices brez dodatne abstrakcije.
  */
 
-import { apiRequest } from './client';
+import { apiRequest } from "./client";
 
 /**
  * SCRUM-29: glavni endpoint za "fetch po device ID".
  * GET /api/devices/by-device-id/:deviceId
  */
 export function fetchDeviceByDeviceId(deviceId, { signal } = {}) {
-  if (!deviceId || typeof deviceId !== 'string') {
-    return Promise.reject(new TypeError('fetchDeviceByDeviceId: deviceId je obvezen.'));
+  if (!deviceId || typeof deviceId !== "string") {
+    return Promise.reject(
+      new TypeError("fetchDeviceByDeviceId: deviceId je obvezen."),
+    );
   }
-  return apiRequest(`/api/devices/by-device-id/${encodeURIComponent(deviceId)}`, { signal });
+  return apiRequest(
+    `/api/devices/by-device-id/${encodeURIComponent(deviceId)}`,
+    { signal },
+  );
 }
 
 /**
@@ -26,8 +31,8 @@ export function fetchDeviceByDeviceId(deviceId, { signal } = {}) {
  * GET /api/devices/:id
  */
 export function fetchDeviceById(id, { signal } = {}) {
-  if (!id || typeof id !== 'string') {
-    return Promise.reject(new TypeError('fetchDeviceById: id je obvezen.'));
+  if (!id || typeof id !== "string") {
+    return Promise.reject(new TypeError("fetchDeviceById: id je obvezen."));
   }
   return apiRequest(`/api/devices/${encodeURIComponent(id)}`, { signal });
 }
@@ -39,5 +44,13 @@ export function fetchDeviceById(id, { signal } = {}) {
  * @param {object} [options] { signal }
  */
 export function listDevices(query = {}, { signal } = {}) {
-  return apiRequest('/api/devices', { query, signal });
+  return apiRequest("/api/devices", { query, signal });
+}
+
+/**
+ * SCRUM-47: vrni stevilo aktivnih (online) naprav.
+ * GET /api/devices/active/count  (javni endpoint, brez auth)
+ */
+export function fetchActiveDeviceCount({ signal } = {}) {
+  return apiRequest("/api/devices/active/count", { signal });
 }

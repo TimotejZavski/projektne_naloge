@@ -6,6 +6,7 @@ import AuthPanel from "./components/AuthPanel";
 import DashboardPage from "./components/Dashboard/DashboardPage";
 import GpsMap from "./components/Dashboard/GpsMap";
 import DeviceLookup from "./components/DeviceLookup";
+import ActiveDeviceCounter from "./components/ActiveDeviceCounter";
 
 const NAV_ITEMS = [
   {
@@ -78,7 +79,10 @@ function App() {
 
           <div className="rail-support">
             <span>Projekt RAI</span>
-            <p>Senzorika mobilne aplikacije, zbrana v operativni pogled za igrišča.</p>
+            <p>
+              Senzorika mobilne aplikacije, zbrana v operativni pogled za
+              igrišča.
+            </p>
           </div>
         </aside>
 
@@ -141,11 +145,14 @@ function OverviewPage({ selectedDeviceId, onNavigate }) {
       <section className="hero-panel">
         <div className="hero-copy">
           <p className="dashboard-kicker">Smart Playgrounds</p>
-          <h2>Digitalni nadzor za igrišča, ki jih obiskujejo mobilni senzorji.</h2>
+          <h2>
+            Digitalni nadzor za igrišča, ki jih obiskujejo mobilni senzorji.
+          </h2>
           <p>
             RAI poveže lokacije igrišč, GPS sled in meritve telefona v miren
             operativni pogled. Namesto seznama API nalog nastane majhen produkt:
-            kje je naprava bila, kaj je izmerila in kateri zapisi pripadajo komu.
+            kje je naprava bila, kaj je izmerila in kateri zapisi pripadajo
+            komu.
           </p>
           <div className="hero-actions">
             <button
@@ -189,27 +196,43 @@ function OverviewPage({ selectedDeviceId, onNavigate }) {
               <small>status, platforma, zadnji signal</small>
             </div>
           </div>
+          <ActiveDeviceCounter />
         </div>
       </section>
 
       <div className="product-summary">
         <article className="summary-card">
-          <span className="summary-icon"><Icon name="pin" /></span>
+          <span className="summary-icon">
+            <Icon name="pin" />
+          </span>
           <p className="status-label">Kontekst</p>
           <h3>Igrišča niso več samo koordinate.</h3>
-          <p>Meritve so vezane na prostor, sled naprave in obisk mobilne aplikacije.</p>
+          <p>
+            Meritve so vezane na prostor, sled naprave in obisk mobilne
+            aplikacije.
+          </p>
         </article>
         <article className="summary-card">
-          <span className="summary-icon"><Icon name="activity" /></span>
+          <span className="summary-icon">
+            <Icon name="activity" />
+          </span>
           <p className="status-label">Signal</p>
           <h3>Podatki dobijo ritem.</h3>
-          <p>GPS in pospeškometer sta prikazana kot časovna zgodba, ne kot surov JSON.</p>
+          <p>
+            GPS in pospeškometer sta prikazana kot časovna zgodba, ne kot surov
+            JSON.
+          </p>
         </article>
         <article className="summary-card">
-          <span className="summary-icon"><Icon name="device" /></span>
+          <span className="summary-icon">
+            <Icon name="device" />
+          </span>
           <p className="status-label">Zaupanje</p>
           <h3>Naprave imajo identiteto.</h3>
-          <p>Prijava, lastništvo in zadnji zapisi ostanejo vidni tam, kjer so pomembni.</p>
+          <p>
+            Prijava, lastništvo in zadnji zapisi ostanejo vidni tam, kjer so
+            pomembni.
+          </p>
         </article>
       </div>
 
@@ -222,8 +245,8 @@ function OverviewPage({ selectedDeviceId, onNavigate }) {
             </div>
           </div>
           <p>
-            Projekt še vedno pokaže avtentikacijo, validacijo, poizvedbe, MQTT in
-            vizualizacijo meritev. Razlika je v tem, da uporabnik zdaj razume
+            Projekt še vedno pokaže avtentikacijo, validacijo, poizvedbe, MQTT
+            in vizualizacijo meritev. Razlika je v tem, da uporabnik zdaj razume
             zgodbo: naprava obišče igrišče, aplikacija zajame podatke, dashboard
             pa jih spremeni v pregled.
           </p>
