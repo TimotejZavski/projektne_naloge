@@ -2,6 +2,7 @@
 @page "/dashboard"
 @inject ISensorService SensorService
 @inject ISensorDataRepository SensorDataRepository
+@inject IMqttSensorPublisher MqttPublisher
 @implements IAsyncDisposable
 
 <PageTitle>Na igrišču</PageTitle>
@@ -41,6 +42,10 @@
         <div class="dashboard-summary-card">
             <span class="dashboard-summary-label">Zajete meritve</span>
             <strong>@sensorHistory.Count</strong>
+        </div>
+        <div class="dashboard-summary-card">
+            <span class="dashboard-summary-label">MQTT povezava</span>
+            <strong class="@MqttStatusClass">@MqttStatusLabel</strong>
         </div>
         <div class="dashboard-summary-card">
             <span class="dashboard-summary-label">Zadnja posodobitev</span>
@@ -140,6 +145,12 @@
         2 => "2 napravi",
         _ => $"{deviceRows.Count} naprav"
     };
+
+    private string MqttStatusLabel => MqttPublisher.IsConnected ? "Povezano" : "Nepovezano";
+
+    private string MqttStatusClass => MqttPublisher.IsConnected
+        ? "dashboard-status--ok"
+        : "dashboard-status--warn";
 
     protected override async Task OnInitializedAsync()
     {

@@ -39,6 +39,9 @@ public class SensorService : ISensorService
         await _gpsSensor.StartAsync();
         await _accelerometerSensor.StartAsync();
 
+        // Vzpostavi MQTT povezavo z LWT, status/connect in heartbeati
+        await _mqttSensorPublisher.ConnectAsync();
+
         if (_monitoringTask is null || _monitoringTask.IsCompleted)
         {
             _monitoringCancellationTokenSource = new CancellationTokenSource();
@@ -69,6 +72,9 @@ public class SensorService : ISensorService
             _monitoringCancellationTokenSource = null;
             _monitoringTask = null;
         }
+
+        // Graciozno odklopi MQTT (ne sprozi LWT)
+        await _mqttSensorPublisher.DisconnectAsync();
 
         await _gpsSensor.StopAsync();
         await _accelerometerSensor.StopAsync();

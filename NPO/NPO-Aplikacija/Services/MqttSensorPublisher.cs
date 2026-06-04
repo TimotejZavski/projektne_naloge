@@ -1,142 +1,366 @@
-using System.Buffers.Binary;
-using System.Net.Sockets;
-using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using MQTTnet;
+using MQTTnet.Protocol;
 using NPO_Aplikacija.Models;
 
 namespace NPO_Aplikacija.Services;
 
-public sealed class MqttSensorPublisher : IMqttSensorPublisher
+/// <summary>
+/// MQTT publisher z persistentno povezavo preko MQTTnet knjiznice.
+///
+/// Ob ConnectAsync:
+///   1. Vzpostavi povezavo z Last Will Testament (status/online → {"online":false})
+///   2. Objavi status/connect z metapodatki naprave
+///   3. Objavi prvi heartbeat (status/online → {"online":true})
+///   4. Zazene periodicen heartbeat timer (vsakih 30 sekund)
+///
+/// Last Will (MQTT retained) zagotavlja, da broker samodejno objavi
+/// offline status, ce se naprava nepricakovano odklopi.
+///
+/// Heartbeat omogoca backendu stetje aktivnih naprav in prikaz stanja
+/// na spletnem dashboardu.
+/// </summary>
+public sealed class MqttSensorPublisher : IMqttSensorPublisher, IAsyncDisposable
 {
-    private const byte ConnectPacketType = 0x10;
-    private const byte PublishPacketType = 0x30;
-    private const byte DisconnectPacketType = 0xE0;
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = false
+    };
 
     private readonly ILogger<MqttSensorPublisher> _logger;
-    private readonly string _deviceId;
-    private readonly string _clientId;
+    private readonly IDeviceIdentityProvider _deviceIdentity;
     private readonly string _host;
     private readonly int _port;
     private readonly string _baseTopic;
+
+    private IMqttClient? _client;
+    private readonly SemaphoreSlim _connectionLock = new(1, 1);
+    private CancellationTokenSource? _heartbeatCts;
+    private Task? _heartbeatTask;
+    private bool _disposed;
+
+    private string OnlineTopic => $"{_baseTopic}/devices/{_deviceIdentity.DeviceId}/status/online";
+    private string ConnectTopic => $"{_baseTopic}/devices/{_deviceIdentity.DeviceId}/status/connect";
+
+    public bool IsConnected => _client?.IsConnected == true;
 
     public MqttSensorPublisher(
         ILogger<MqttSensorPublisher> logger,
         IDeviceIdentityProvider deviceIdentityProvider)
     {
         _logger = logger;
-        _deviceId = deviceIdentityProvider.DeviceId;
-        _clientId = deviceIdentityProvider.ClientId;
+        _deviceIdentity = deviceIdentityProvider;
         _host = "localhost";
         _port = 1883;
         _baseTopic = "smart-playgrounds";
     }
 
+    public async Task ConnectAsync(CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(MqttSensorPublisher));
+        }
+
+        await _connectionLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_client?.IsConnected == true)
+            {
+                _logger.LogDebug("MQTT ze povezan — preskakujem ConnectAsync.");
+                return;
+            }
+
+            // Pripravi Last Will: ce se nepricakovano odklopimo,
+            // broker objavi retained sporocilo "offline".
+            var willPayload = JsonSerializer.Serialize(new
+            {
+                online = false,
+                reason = "unexpected-disconnect"
+            }, JsonOptions);
+
+            var mqttFactory = new MqttClientFactory();
+            _client = mqttFactory.CreateMqttClient();
+
+            var options = new MqttClientOptionsBuilder()
+                .WithTcpServer(_host, _port)
+                .WithClientId(_deviceIdentity.ClientId)
+                .WithWillTopic(OnlineTopic)
+                .WithWillPayload(willPayload)
+                .WithWillQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
+                .WithWillRetain(true)
+                .WithKeepAlivePeriod(TimeSpan.FromSeconds(60))
+                .WithCleanSession(false)
+                .Build();
+
+            _client.DisconnectedAsync += OnDisconnectedAsync;
+
+            _logger.LogInformation("MQTT povezovanje na {Host}:{Port} kot {ClientId}...",
+                _host, _port, _deviceIdentity.ClientId);
+
+            var connectResult = await _client.ConnectAsync(options, cancellationToken);
+
+            if (connectResult.ResultCode != MqttClientConnectResultCode.Success)
+            {
+                _logger.LogWarning("MQTT povezava ni uspela: {ResultCode}", connectResult.ResultCode);
+                return;
+            }
+
+            _logger.LogInformation("MQTT povezan (LWT nastavljen na {Topic}).", OnlineTopic);
+
+            // Objavi status/connect z metapodatki
+            await PublishConnectInfoAsync(cancellationToken);
+
+            // Objavi prvi heartbeat
+            await PublishHeartbeatAsync(cancellationToken);
+
+            // Zaženi periodični heartbeat
+            StartHeartbeat();
+        }
+        catch (Exception ex) when (ex is not ObjectDisposedException)
+        {
+            _logger.LogWarning(ex, "MQTT povezava ni uspela.");
+        }
+        finally
+        {
+            _connectionLock.Release();
+        }
+    }
+
     public async Task PublishAsync(SensorData sensorData, CancellationToken cancellationToken = default)
     {
-        var topic = MqttSensorMessageFactory.BuildTopic(_baseTopic, _deviceId, sensorData);
-        var payload = MqttSensorMessageFactory.BuildJsonPayload(_deviceId, sensorData);
+        if (_disposed)
+        {
+            return;
+        }
+
+        // Poskusi se povezati, ce se nismo
+        if (_client?.IsConnected != true)
+        {
+            try
+            {
+                await ConnectAsync(cancellationToken);
+            }
+            catch
+            {
+                // Ne prekinemo — ce broker ni dosegljiv, preskocimo objavo
+            }
+        }
+
+        if (_client?.IsConnected != true)
+        {
+            return;
+        }
+
+        var topic = MqttSensorMessageFactory.BuildTopic(_baseTopic, _deviceIdentity.DeviceId, sensorData);
+        var payload = MqttSensorMessageFactory.BuildJsonPayload(_deviceIdentity.DeviceId, sensorData);
+
+        var qos = sensorData is GPSData
+            ? MqttQualityOfServiceLevel.AtLeastOnce
+            : MqttQualityOfServiceLevel.AtMostOnce;
+
+        var message = new MqttApplicationMessageBuilder()
+            .WithTopic(topic)
+            .WithPayload(payload)
+            .WithQualityOfServiceLevel(qos)
+            .Build();
 
         try
         {
-            using var tcpClient = new TcpClient();
-            await tcpClient.ConnectAsync(_host, _port, cancellationToken);
-
-            await using var stream = tcpClient.GetStream();
-            await WriteConnectPacketAsync(stream, cancellationToken);
-            await ReadConnAckAsync(stream, cancellationToken);
-            await WritePublishPacketAsync(stream, topic, payload, cancellationToken);
-            await stream.WriteAsync(new[] { DisconnectPacketType, (byte)0x00 }, cancellationToken);
+            await _client.PublishAsync(message, cancellationToken);
         }
-        catch (Exception exception) when (exception is SocketException or IOException or TimeoutException)
+        catch (Exception ex)
         {
-            _logger.LogWarning(exception, "MQTT broker is not available for topic {Topic}.", topic);
+            _logger.LogWarning(ex, "MQTT objava na {Topic} ni uspela.", topic);
         }
     }
 
-    private async Task WriteConnectPacketAsync(NetworkStream stream, CancellationToken cancellationToken)
+    public async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
-        using var payload = new MemoryStream();
-        WriteMqttString(payload, "MQTT");
-        payload.WriteByte(0x04);
-        payload.WriteByte(0x02);
-        payload.WriteByte(0x00);
-        payload.WriteByte(0x3C);
-        WriteMqttString(payload, _clientId);
-
-        await WritePacketAsync(stream, ConnectPacketType, payload.ToArray(), cancellationToken);
-    }
-
-    private static async Task ReadConnAckAsync(NetworkStream stream, CancellationToken cancellationToken)
-    {
-        var buffer = new byte[4];
-        var bytesRead = 0;
-
-        while (bytesRead < buffer.Length)
+        if (_disposed)
         {
-            var currentRead = await stream.ReadAsync(buffer.AsMemory(bytesRead), cancellationToken);
-            if (currentRead == 0)
+            return;
+        }
+
+        await _connectionLock.WaitAsync(cancellationToken);
+        try
+        {
+            await StopHeartbeatAsync();
+
+            if (_client?.IsConnected == true)
             {
-                throw new IOException("MQTT broker closed the connection before CONNACK.");
+                // Graciozno odklopi — NE sprozi LWT
+                await _client.DisconnectAsync();
+
+                _logger.LogInformation("MQTT graciozno odklopljen.");
             }
 
-            bytesRead += currentRead;
-        }
-
-        if (buffer[0] != 0x20 || buffer[1] != 0x02 || buffer[3] != 0x00)
-        {
-            throw new IOException("MQTT broker rejected the connection.");
-        }
-    }
-
-    private static async Task WritePublishPacketAsync(
-        NetworkStream stream,
-        string topic,
-        string payload,
-        CancellationToken cancellationToken)
-    {
-        using var packetPayload = new MemoryStream();
-        WriteMqttString(packetPayload, topic);
-        packetPayload.Write(Encoding.UTF8.GetBytes(payload));
-
-        await WritePacketAsync(stream, PublishPacketType, packetPayload.ToArray(), cancellationToken);
-    }
-
-    private static async Task WritePacketAsync(
-        NetworkStream stream,
-        byte packetType,
-        byte[] payload,
-        CancellationToken cancellationToken)
-    {
-        var fixedHeader = new List<byte> { packetType };
-        fixedHeader.AddRange(EncodeRemainingLength(payload.Length));
-
-        await stream.WriteAsync(fixedHeader.ToArray(), cancellationToken);
-        await stream.WriteAsync(payload, cancellationToken);
-    }
-
-    private static void WriteMqttString(Stream stream, string value)
-    {
-        var valueBytes = Encoding.UTF8.GetBytes(value);
-        Span<byte> lengthBytes = stackalloc byte[2];
-        BinaryPrimitives.WriteUInt16BigEndian(lengthBytes, (ushort)valueBytes.Length);
-        stream.Write(lengthBytes);
-        stream.Write(valueBytes);
-    }
-
-    private static IEnumerable<byte> EncodeRemainingLength(int length)
-    {
-        do
-        {
-            var encodedByte = length % 128;
-            length /= 128;
-
-            if (length > 0)
+            if (_client is not null)
             {
-                encodedByte |= 128;
+                _client.DisconnectedAsync -= OnDisconnectedAsync;
+                _client.Dispose();
+                _client = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Napaka pri MQTT odklopu.");
+        }
+        finally
+        {
+            _connectionLock.Release();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        await DisconnectAsync();
+        _connectionLock.Dispose();
+    }
+
+    private async Task PublishConnectInfoAsync(CancellationToken cancellationToken)
+    {
+        if (_client?.IsConnected != true)
+        {
+            return;
+        }
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            platform = _deviceIdentity.Platform,
+            appVersion = _deviceIdentity.AppVersion
+        }, JsonOptions);
+
+        var message = new MqttApplicationMessageBuilder()
+            .WithTopic(ConnectTopic)
+            .WithPayload(payload)
+            .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
+            .WithRetainFlag(false)
+            .Build();
+
+        await _client.PublishAsync(message, cancellationToken);
+        _logger.LogInformation("MQTT status/connect objavljen za {DeviceId}.", _deviceIdentity.DeviceId);
+    }
+
+    private async Task PublishHeartbeatAsync(CancellationToken cancellationToken)
+    {
+        if (_client?.IsConnected != true)
+        {
+            return;
+        }
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            online = true,
+            timestampUtc = DateTime.UtcNow.ToString("O")
+        }, JsonOptions);
+
+        var message = new MqttApplicationMessageBuilder()
+            .WithTopic(OnlineTopic)
+            .WithPayload(payload)
+            .WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
+            .WithRetainFlag(true)
+            .Build();
+
+        await _client.PublishAsync(message, cancellationToken);
+    }
+
+    private void StartHeartbeat()
+    {
+        StopHeartbeat();
+
+        _heartbeatCts = new CancellationTokenSource();
+        _heartbeatTask = RunHeartbeatLoopAsync(_heartbeatCts.Token);
+    }
+
+    private async Task StopHeartbeatAsync()
+    {
+        if (_heartbeatCts is not null)
+        {
+            await _heartbeatCts.CancelAsync();
+            _heartbeatCts.Dispose();
+            _heartbeatCts = null;
+        }
+
+        if (_heartbeatTask is not null)
+        {
+            try
+            {
+                await _heartbeatTask;
+            }
+            catch (OperationCanceledException)
+            {
             }
 
-            yield return (byte)encodedByte;
+            _heartbeatTask = null;
         }
-        while (length > 0);
+    }
+
+    private void StopHeartbeat()
+    {
+        if (_heartbeatCts is not null)
+        {
+            _heartbeatCts.Cancel();
+            _heartbeatCts.Dispose();
+            _heartbeatCts = null;
+        }
+
+        _heartbeatTask = null;
+    }
+
+    private async Task RunHeartbeatLoopAsync(CancellationToken cancellationToken)
+    {
+        // 30 sekundni interval — dovolj pogosto za dashboard, dovolj redek za omrezje
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await timer.WaitForNextTickAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+
+            try
+            {
+                await PublishHeartbeatAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Heartbeat objava ni uspela.");
+            }
+        }
+    }
+
+    private async Task OnDisconnectedAsync(MqttClientDisconnectedEventArgs eventArgs)
+    {
+        _logger.LogWarning(
+            "MQTT nepricakovano odklopljen: {Reason}. ClientWasConnected={WasConnected}",
+            eventArgs.Reason,
+            eventArgs.ClientWasConnected);
+
+        // Ce je bil clientWasConnected, pomeni da je LWT ze sprozen
+        // (ali pa bo sprozen v kratkem). Ne poskusaj ponovne povezave s
+        // starim client objektom — naslednji PublishAsync bo poklical
+        // ConnectAsync, ki ustvari nov client.
+
+        await StopHeartbeatAsync();
+
+        if (_client is not null)
+        {
+            _client.DisconnectedAsync -= OnDisconnectedAsync;
+        }
     }
 }
