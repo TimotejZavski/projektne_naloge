@@ -50,4 +50,24 @@ VID/**/*.[bB][mM][pP]
 VID/**/*.[tT][iI][fF]
 VID/**/*.[tT][iI][fF][fF]
 VID/**/*.[hH][eE][iI][cC]
-VID/**/*.[aA][vV][iI][fF]VID.zip
+VID/**/*.[aA][vV][iI][fF]
+VID.zip
+
+# VID videos (raw footage / feeds — too large for git)
+VID/**/*.[mM][pP]4
+VID/**/*.[mM][oO][vV]
+VID/**/*.[aA][vV][iI]
+VID/**/*.[mM][kK][vV]
+
+# Python / venv / ML
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Model weights (downloaded or trained — keep out of git)
+*.pt
+*.onnx
+*.engine
+runs/
