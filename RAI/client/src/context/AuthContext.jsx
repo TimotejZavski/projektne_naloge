@@ -15,6 +15,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import {
   login as apiLogin,
+  register as apiRegister,
   logout as apiLogout,
   refresh as apiRefresh,
   fetchCurrentUser,
@@ -75,6 +76,14 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  const register = useCallback(async (payload) => {
+    setError(null);
+    const data = await apiRegister(payload);
+    setUser(data.user || null);
+    setStatus('authed');
+    return data;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await apiLogout();
@@ -85,8 +94,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, status, error, login, logout, refresh: initialise }),
-    [user, status, error, login, logout, initialise]
+    () => ({ user, status, error, login, register, logout, refresh: initialise }),
+    [user, status, error, login, register, logout, initialise]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1280,3 +1280,363 @@ h3 {
     color: #7f8c8d;
     font-variant-numeric: tabular-nums;
 }
+
+/* ============================================================
+   Splash (loading) + Auth page
+   ============================================================ */
+
+.splash {
+    position: fixed;
+    inset: 0;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    gap: 0;
+    /* Belo ozadje vedno pokriva stran zadaj -> brez "blica" auth strani.
+       Vsebina (video + tekst) fade-a se naprej posebej, da se izognemo
+       prikazu teksta pred video-jem. */
+    opacity: 1;
+}
+
+.splash__video,
+.splash__title {
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+        opacity 700ms cubic-bezier(0.4, 0, 0.2, 1),
+        transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.splash__title {
+    transition-delay: 80ms; /* mehka kaskada ob vstopu */
+}
+
+.splash--ready .splash__video,
+.splash--ready .splash__title {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Izhod = vhod, ravno obrnjen: title izgine prvi, video za njim. */
+.splash--fading .splash__video,
+.splash--fading .splash__title {
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+.splash--fading .splash__video {
+    transition-delay: 80ms;
+}
+
+.splash--fading .splash__title {
+    transition-delay: 0ms;
+}
+
+.splash--fading {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.splash__video {
+    display: block;
+    /* -30% velikosti glede na prejsnje 45vw/360px/40vh */
+    max-width: min(31.5vw, 252px);
+    max-height: 28vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    background: #ffffff;
+}
+
+.splash__title {
+    font-family: "HelveticaLocal", "Helvetica", "Helvetica Neue", Arial, sans-serif;
+    color: #000000;
+    text-transform: lowercase;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    /* Tesnejse grupiranje z videom (-20% prazno prostora). */
+    margin-top: -0.4rem;
+    line-height: 1;
+}
+
+.auth-page {
+    position: relative;
+    min-height: 100vh;
+    background: #ffffff;
+    font-family: "HelveticaLocal", "Helvetica", "Helvetica Neue", Arial, sans-serif;
+    overflow: hidden;
+}
+
+.court-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    filter: grayscale(1) contrast(1.05) blur(2px);
+}
+
+.court-bg canvas {
+    pointer-events: auto;
+}
+
+.auth-card {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 50vw;
+    z-index: 2;
+    background: transparent;
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border-left: 1px solid rgba(255, 255, 255, 0.35);
+    color: #0f172a;
+    padding: 3rem 2rem;
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    overflow-y: auto;
+}
+
+.auth-card > * {
+    width: 100%;
+    max-width: 360px;
+}
+
+@media (max-width: 720px) {
+    .auth-card {
+        width: 100vw;
+        padding: 2rem 1.5rem;
+    }
+}
+
+/* ---------- Background tuner ---------- */
+.bg-tuner {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    background: #000;
+    color: #fff;
+    font-family: "HelveticaLocal", "Helvetica", "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.78rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 8px;
+    width: 240px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.bg-tuner__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.35rem;
+}
+
+.bg-tuner__header strong {
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+}
+
+.bg-tuner__actions {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.bg-tuner__actions button {
+    background: #ffffff;
+    color: #000;
+    border: none;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.72rem;
+    border-radius: 4px;
+    font-family: inherit;
+    cursor: pointer;
+    text-transform: lowercase;
+}
+
+.bg-tuner__row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.bg-tuner__rowhead {
+    display: flex;
+    justify-content: space-between;
+    font-variant-numeric: tabular-nums;
+}
+
+.bg-tuner__val {
+    opacity: 0.7;
+}
+
+.bg-tuner input[type="range"] {
+    width: 100%;
+    accent-color: #ffffff;
+}
+
+.bg-tuner__check {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+}
+
+.auth-card__title {
+    font-size: 1.6rem;
+    margin: 0;
+    text-align: center;
+    font-weight: 500;
+    color: #0f172a;
+    width: 100%;
+    display: block;
+}
+
+/* ---------- Brand bar (top-left of auth page) ---------- */
+.brand-bar {
+    position: fixed;
+    top: 1.5rem;
+    left: 1.75rem;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-family: "HelveticaLocal", "Helvetica", "Helvetica Neue", Arial, sans-serif;
+}
+
+.brand-bar__logo {
+    height: 40px;
+    width: auto;
+    display: block;
+}
+
+.brand-bar__name {
+    text-transform: lowercase;
+    letter-spacing: -0.02em;
+    font-size: 1.85rem;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    width: 100%;
+    max-width: 460px;
+}
+
+.auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.55);
+}
+
+.auth-field__eyebrow {
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.55);
+    font-weight: 500;
+}
+
+.auth-field input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 2.4rem;
+    font-weight: 400;
+    line-height: 1.1;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.auth-field input::placeholder {
+    color: #0f172a;
+    opacity: 1;
+}
+
+.auth-field input:focus::placeholder {
+    opacity: 0.35;
+}
+
+.auth-arrow-btn {
+    margin-top: 1rem;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    align-self: flex-end;
+    line-height: 0;
+    transition: transform 200ms ease, opacity 150ms ease;
+}
+
+.auth-arrow-btn img {
+    display: block;
+    width: 108px;
+    height: auto;
+}
+
+.auth-arrow-btn:hover:not(:disabled) {
+    transform: translateX(6px);
+}
+
+.auth-arrow-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ---------- Auth error message ---------- */
+.auth-error {
+    margin: 0.5rem 0 0;
+    padding: 0.75rem 0 0;
+    border-top: 1px solid rgba(15, 23, 42, 0.18);
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    font-family: inherit;
+    color: #0f172a;
+    animation: auth-error-in 240ms ease both;
+}
+
+.auth-error__tag {
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #b91c1c;
+    flex: 0 0 auto;
+    font-weight: 600;
+    padding-top: 0.18rem;
+}
+
+.auth-error__tag::before {
+    content: "✦ ";
+    margin-right: 0.15em;
+}
+
+.auth-error__msg {
+    font-size: 0.95rem;
+    line-height: 1.35;
+    color: rgba(15, 23, 42, 0.85);
+}
+
+@keyframes auth-error-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}

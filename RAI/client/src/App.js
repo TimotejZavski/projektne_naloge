@@ -1,7 +1,9 @@
 import { useState } from "react";
 import "./App.css";
 
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import LoadingScreen from "./components/LoadingScreen";
+import AuthPage from "./components/AuthPage";
 import AuthPanel from "./components/AuthPanel";
 import DashboardPage from "./components/Dashboard/DashboardPage";
 import GpsMap from "./components/Dashboard/GpsMap";
@@ -40,14 +42,44 @@ const NAV_ITEMS = [
 ];
 
 function App() {
+  return (
+    <AuthProvider>
+      <AppGate />
+    </AuthProvider>
+  );
+}
+
+function AppGate() {
+  const { status } = useAuth();
+  const [splashDone, setSplashDone] = useState(false);
+
+  // Ko seja preneha biti "initializing", takoj mount-amo destinacijsko
+  // stran POD splash-om, da se npr. Three.js canvas in glb model
+  // nalozita med predvajanjem splash videa. Ko splash konca, je vse
+  // ze izrisano in ni "praznega" preskoka.
+  const destination =
+    status === "initializing"
+      ? null
+      : status === "authed"
+        ? <Dashboard />
+        : <AuthPage />;
+
+  return (
+    <>
+      {destination}
+      {!splashDone && <LoadingScreen onDone={() => setSplashDone(true)} />}
+    </>
+  );
+}
+
+function Dashboard() {
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [activeView, setActiveView] = useState("overview");
   const activeMeta =
     NAV_ITEMS.find((item) => item.id === activeView) || NAV_ITEMS[0];
 
   return (
-    <AuthProvider>
-      <div className="product-shell">
+    <div className="product-shell">
         <aside className="app-rail" aria-label="Smart Playgrounds">
           <button
             type="button"
@@ -135,7 +167,6 @@ function App() {
           </div>
         </main>
       </div>
-    </AuthProvider>
   );
 }
 
