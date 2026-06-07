@@ -15,6 +15,9 @@ router.use('/devices', require('./devices.routes'));
 // Sensor measurements (SCRUM-20): /api/measurements/*
 router.use('/measurements', require('./measurements.routes'));
 
+// Admin agregirani read endpointi: /api/admin/*
+router.use('/admin', require('./admin.routes'));
+
 // Scraper ingestion (SCRUM-33): /api/scraper/*
 router.use('/scraper', require('./scraper.routes'));
 
