@@ -69,7 +69,13 @@ function createApp() {
       origin: (origin, callback) => {
         // Dovoli zahteve brez Origin (curl, Postman, server-to-server).
         if (!origin) return callback(null, true);
-        if (env.CORS_ORIGINS.includes(origin)) return callback(null, true);
+        // Primerjava neobcutljiva na zakljucni posevnik (npr. nekateri
+        // odjemalci posljejo "http://host:port/" namesto "http://host:port").
+        const strip = (o) => o.replace(/\/+$/, "");
+        const normalized = strip(origin);
+        if (env.CORS_ORIGINS.some((allowed) => strip(allowed) === normalized)) {
+          return callback(null, true);
+        }
         return callback(new Error(`CORS: origin ${origin} ni dovoljen`));
       },
       credentials: true,
