@@ -39,6 +39,9 @@ obj/
 # Scraper data exports
 **/data/
 
+# RAI database exports (BSON + JSON — too large for git, included in ZIP)
+RAI/database/export/
+
 
 # VID images
 VID/**/*.[jJ][pP][gG]
