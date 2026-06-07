@@ -68,6 +68,18 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: () => new Date(),
     },
+
+    // Denormalizirani 'snapshot' za hitre liste v admin dashboardu.
+    // Resnica zivi v `visits` kolekciji; ta polja se osvezijo prek
+    // services/VisitStatsService.recompute(userId).
+    stats: {
+      totalVisits: { type: Number, default: 0 },
+      lastVisitAt: { type: Date, default: null },
+      favoritePlaygroundId: { type: mongoose.Schema.Types.ObjectId, ref: 'Playground', default: null },
+      favoritePlaygroundName: { type: String, default: null },
+      streakDays: { type: Number, default: 0 },
+      updatedAt: { type: Date, default: null },
+    },
   },
   {
     collection: 'users',
