@@ -19,6 +19,16 @@ export async function login({ email, password }) {
   return data;
 }
 
+export async function register({ email, password, displayName }) {
+  const data = await apiRequest('/api/auth/register', {
+    method: 'POST',
+    body: { email, password, displayName },
+    auth: false,
+  });
+  if (data && data.accessToken) setAccessToken(data.accessToken);
+  return data;
+}
+
 export async function refresh() {
   const data = await apiRequest('/api/auth/refresh', {
     method: 'POST',
