@@ -11,11 +11,15 @@
  *
  * Polje `aggregatedData` je raznolik glede na sensorType:
  *   - gps:           { avgLatitude, avgLongitude, minAccuracy, maxAccuracy, sampleCount }
- *   - accelerometer: { avgX, avgY, avgZ, maxAccel, detectionStatus, sampleCount }
+ *   - accelerometer: { avgX, avgY, avgZ, maxAccel, activityLevel, detectionStatus, sampleCount }
  *
- * `detectionStatus` za accelerometer:
- *   - 'stationary': gibanja ni zaznati (vecina vzorcev je blizu 0)
- *   - 'moving': gibanja je zaznati
+ * `activityLevel` za accelerometer:
+ *   - standardni odklon magnitude pospeska (m/s^2); 0 = mirovanje, visje = vec gibanja.
+ *
+ * `detectionStatus` za accelerometer (stopnja uporabe igrala/igrisca):
+ *   - 'idle':   prosto (gibanja ni zaznati)
+ *   - 'light':  rahla uporaba
+ *   - 'active': v uporabi (aktivno gibanje)
  */
 
 const mongoose = require('mongoose');

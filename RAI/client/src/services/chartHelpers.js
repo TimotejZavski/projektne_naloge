@@ -177,3 +177,81 @@ export function buildGpsAccuracyDataset(measurements) {
     },
   ];
 }
+
+// ---------------------------------------------------------------------------
+// SCRUM-49: vizualizacija aktivnosti / uporabe (iz accelerometer agregatov)
+// ---------------------------------------------------------------------------
+
+const STATUS_META = {
+  idle: { label: "Prosto", color: "#95a5a6" },
+  light: { label: "Rahla uporaba", color: "#f39c12" },
+  active: { label: "V uporabi", color: "#e74c3c" },
+};
+
+/** Vrne { label, color } za dani detectionStatus (z varnim fallbackom). */
+export function statusMeta(status) {
+  return STATUS_META[status] || { label: status || "neznano", color: "#7f8c8d" };
+}
+
+export function buildActivityOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label(ctx) {
+            const meta = statusMeta(ctx.raw?.status);
+            return `Aktivnost: ${ctx.parsed.y.toFixed(3)} m/s²  (${meta.label})`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        type: "time",
+        time: {
+          tooltipFormat: "HH:mm",
+          displayFormats: { minute: "HH:mm", hour: "HH:mm" },
+        },
+        title: { display: true, text: "Čas (UTC)" },
+        ticks: { maxTicksLimit: 12 },
+      },
+      y: {
+        title: { display: true, text: "Aktivnost (σ, m/s²)" },
+        beginAtZero: true,
+      },
+    },
+    animation: { duration: 300 },
+  };
+}
+
+/**
+ * @param {Array} processed - ProcessedMeasurement dokumenti (kronološko narascajoce),
+ *   vsak z aggregatedData.{activityLevel, detectionStatus}.
+ */
+export function buildActivityDatasets(processed) {
+  const points = processed.map((p) => ({
+    x: new Date(p.periodEndUtc),
+    y: p.aggregatedData?.activityLevel ?? 0,
+    status: p.aggregatedData?.detectionStatus,
+  }));
+
+  return [
+    {
+      label: "Aktivnost",
+      data: points,
+      borderColor: "#8e44ad",
+      backgroundColor: "#8e44ad20",
+      pointBackgroundColor: points.map((pt) => statusMeta(pt.status).color),
+      pointBorderColor: points.map((pt) => statusMeta(pt.status).color),
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      borderWidth: 2,
+      tension: 0.2,
+      fill: true,
+    },
+  ];
+}

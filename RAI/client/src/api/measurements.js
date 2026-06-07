@@ -59,3 +59,19 @@ export function fetchLatestMeasurementsForDevice(deviceId, query = {}, { signal 
   }
   return fetchLatestMeasurements({ ...query, deviceId }, { signal });
 }
+
+/**
+ * GET /api/measurements/processed (SCRUM-49) — agregirani/obdelani podatki.
+ *
+ * Za accelerometer vsebuje izpeljano `activityLevel` in `detectionStatus`
+ * (idle | light | active). Rezultat je sortiran po `periodEndUtc` padajoce.
+ *
+ * @param {object} [query]
+ *   - deviceId        user-facing string
+ *   - sensorType      'gps' | 'accelerometer'
+ *   - aggregationType '5min' | '1hour' | 'daily'
+ *   - limit           1..1000 (default 100)
+ */
+export function listProcessedMeasurements(query = {}, { signal } = {}) {
+  return apiRequest('/api/measurements/processed', { query, signal });
+}

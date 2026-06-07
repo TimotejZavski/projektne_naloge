@@ -8,6 +8,7 @@ import { listMeasurements } from "../../api/measurements";
 import DeviceSelector from "./DeviceSelector";
 import SensorTypeToggle from "./SensorTypeToggle";
 import TimeSeriesChart from "./TimeSeriesChart";
+import AccelerometerActivity from "./AccelerometerActivity";
 
 const TIME_PRESETS = [
   { label: "15 min", minutes: 15 },
@@ -109,13 +110,18 @@ export default function DashboardPage({ onDeviceChange }) {
           <p>Izberite napravo — graf prikaže meritve z mobilne aplikacije na igrišču.</p>
         </div>
       ) : (
-        <TimeSeriesChart
-          measurements={measurements}
-          sensorType={sensorType}
-          isLoading={loading && !data}
-          error={error}
-          onRetry={fetchData}
-        />
+        <>
+          <TimeSeriesChart
+            measurements={measurements}
+            sensorType={sensorType}
+            isLoading={loading && !data}
+            error={error}
+            onRetry={fetchData}
+          />
+          {sensorType === "accelerometer" && (
+            <AccelerometerActivity deviceId={deviceId} />
+          )}
+        </>
       )}
     </section>
   );
