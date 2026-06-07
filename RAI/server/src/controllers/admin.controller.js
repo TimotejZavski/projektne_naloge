@@ -392,7 +392,7 @@ const getUsersOverview = asyncHandler(async (req, res) => {
     aggregateHeatmap(),
     aggregateTopUsersThisWeek(sinceWeek),
     aggregateWeeklyTrend(sinceEightWeeks, now),
-    aggregateTopCourts(),
+    aggregateGlobalTopCourts(),
     computePersonaMix(now),
   ]);
 
@@ -488,8 +488,8 @@ async function aggregateWeeklyTrend(since, now) {
   return out;
 }
 
-// ── Top courts (all time) ───────────────────────────────────────────
-async function aggregateTopCourts() {
+// ── Top courts (all time, global) ───────────────────────────────────
+async function aggregateGlobalTopCourts() {
   const rows = await Visit.aggregate([
     { $group: { _id: '$playgroundId', count: { $sum: 1 } } },
     { $sort: { count: -1 } },
