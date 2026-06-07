@@ -13,6 +13,14 @@
 const SensorMeasurement = require('../models/SensorMeasurement');
 const ProcessedMeasurement = require('../models/ProcessedMeasurement');
 
+// Pragova aktivnosti = standardni odklon magnitude pospeska (m/s^2).
+//   < IDLE_THRESHOLD               -> 'idle'   (igralo/igrisce prosto)
+//   IDLE_THRESHOLD .. ACTIVE_..    -> 'light'  (rahla uporaba)
+//   >= ACTIVE_THRESHOLD            -> 'active' (v uporabi)
+// Nastavljiva po umerjanju na realnih podatkih.
+const IDLE_THRESHOLD = 0.5;
+const ACTIVE_THRESHOLD = 2.5;
+
 class DataAggregationService {
   /**
    * Agregira podatke za določen period
@@ -207,26 +215,38 @@ class DataAggregationService {
   }
 
   /**
-   * Agregira accelerometer podatke
+   * Agregira accelerometer podatke v meritev aktivnosti (uporabe igrala/igrisca).
+   *
+   * Kljucna metrika je `activityLevel` = standardni odklon magnitude pospeska.
+   * Std. odklon odstrani konstantno gravitacijo (~9.81 m/s^2), zato deluje ne
+   * glede na orientacijo naprave in ne glede na to, ali so podatki v 'm/s2' ali
+   * 'g'. Mirujoca naprava ima ~konstantno magnitudo => nizek odklon; uporaba
+   * (gibanje igrala) povzroci nihanje magnitude => visok odklon.
+   *
    * @param {Array} measurements
-   * @returns {Object} { avgX, avgY, avgZ, maxAccel, detectionStatus }
+   * @returns {Object} { avgX, avgY, avgZ, maxAccel, activityLevel, detectionStatus, sampleCount }
    */
   static aggregateAccelerometer(measurements) {
+    const G = 9.81; // m/s^2 — za pretvorbo iz enote 'g'
+
     let sumX = 0;
     let sumY = 0;
     let sumZ = 0;
-    let maxAccel = 0;
+    const magnitudes = [];
 
     for (const m of measurements) {
-      const { x, y, z } = m.data;
+      let { x, y, z } = m.data;
+      // Normaliziraj na m/s^2, ce so podatki podani v enotah 'g'
+      if (m.data.unit === 'g') {
+        x *= G;
+        y *= G;
+        z *= G;
+      }
 
       sumX += x;
       sumY += y;
       sumZ += z;
-
-      // Izračunaj magnitude (Euklidska norma)
-      const magnitude = Math.sqrt(x * x + y * y + z * z);
-      maxAccel = Math.max(maxAccel, magnitude);
+      magnitudes.push(Math.sqrt(x * x + y * y + z * z));
     }
 
     const count = measurements.length;
@@ -234,16 +254,29 @@ class DataAggregationService {
     const avgY = sumY / count;
     const avgZ = sumZ / count;
 
-    // Detektuj ali je naprava v gibanju
-    // Če je povprečno pospešenje velika (> 1g ~ 9.8 m/s²) => gibanje
-    const avgMagnitude = Math.sqrt(avgX * avgX + avgY * avgY + avgZ * avgZ);
-    const detectionStatus = avgMagnitude > 1.5 ? 'moving' : 'stationary';
+    // Aktivnost = variabilnost (std. odklon) magnitude pospeska.
+    // Konstantna gravitacija se odsteje sama (odklon okoli povprecja).
+    const meanMag = magnitudes.reduce((a, b) => a + b, 0) / count;
+    const variance =
+      magnitudes.reduce((acc, mag) => acc + (mag - meanMag) ** 2, 0) / count;
+    const activityLevel = Math.sqrt(variance); // m/s^2; 0 = mirovanje
+    const maxAccel = Math.max(...magnitudes);
+
+    let detectionStatus;
+    if (activityLevel < IDLE_THRESHOLD) {
+      detectionStatus = 'idle'; // prosto
+    } else if (activityLevel < ACTIVE_THRESHOLD) {
+      detectionStatus = 'light'; // rahla uporaba
+    } else {
+      detectionStatus = 'active'; // v uporabi
+    }
 
     return {
       avgX: parseFloat(avgX.toFixed(3)),
       avgY: parseFloat(avgY.toFixed(3)),
       avgZ: parseFloat(avgZ.toFixed(3)),
       maxAccel: parseFloat(maxAccel.toFixed(3)),
+      activityLevel: parseFloat(activityLevel.toFixed(3)),
       detectionStatus,
       sampleCount: count,
     };
