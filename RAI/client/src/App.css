@@ -1640,3 +1640,355 @@ h3 {
     from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ============================================================
+   Page crossfade (AuthPage <-> AdminShell)
+   ============================================================ */
+.page-stage {
+    animation: page-enter 700ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Med "leaving" stage je stran obesena cez celoten viewport, da fade-a
+   nad novim mount-om, ki ze obstaja spodaj. */
+.page-stage--leaving {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    animation: page-leave 700ms cubic-bezier(0.4, 0, 0.2, 1) both;
+    pointer-events: none;
+}
+
+@keyframes page-enter {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes page-leave {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-6px); }
+}
+
+/* ============================================================
+   Admin shell — topbar + main
+   ============================================================ */
+.admin-shell {
+    min-height: 100vh;
+    background: #ffffff;
+    font-family: "HelveticaLocal", "Helvetica", "Helvetica Neue", Arial, sans-serif;
+    color: #0f172a;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-topbar {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.admin-brand {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: inherit;
+    color: inherit;
+}
+
+.admin-brand__logo {
+    height: 32px;
+    width: auto;
+    display: block;
+}
+
+.admin-brand__name {
+    text-transform: lowercase;
+    letter-spacing: -0.02em;
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.admin-topnav {
+    display: flex;
+    gap: 0.25rem;
+    margin-left: 1.5rem;
+}
+
+.admin-navlink {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: rgba(15, 23, 42, 0.45);
+    padding: 0.35rem 0.6rem;
+    text-transform: lowercase;
+    letter-spacing: 0;
+    transition: color 150ms ease;
+}
+
+.admin-navlink:hover {
+    color: rgba(15, 23, 42, 0.85);
+}
+
+.admin-navlink--active {
+    color: #0f172a;
+}
+
+.admin-userblock {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.admin-userblock__name {
+    font-size: 0.85rem;
+    color: rgba(15, 23, 42, 0.6);
+}
+
+.admin-signout {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    color: rgba(15, 23, 42, 0.55);
+    font-size: 0.85rem;
+    padding: 0.3rem 0.5rem;
+    text-transform: lowercase;
+    transition: color 150ms ease;
+}
+
+.admin-signout:hover {
+    color: #b91c1c;
+}
+
+.admin-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================================
+   Overview landing
+   ============================================================ */
+.overview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ----- KPI strip ----- */
+.kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    padding: 1.25rem 2rem 1.5rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding-right: 1.5rem;
+}
+
+.kpi + .kpi {
+    border-left: 1px solid rgba(15, 23, 42, 0.08);
+    padding-left: 1.5rem;
+}
+
+.kpi__label {
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.45);
+}
+
+.kpi__value {
+    font-size: 2rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: #0f172a;
+}
+
+/* ----- Editorial split ----- */
+.overview-split {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 0;
+}
+
+.world-card {
+    position: relative;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    color: #0f172a;
+    padding: 3rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 1.25rem;
+    min-height: 60vh;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.world-card + .world-card {
+    border-left: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* Svetla varianta — hover subtilen wash. */
+.world-card--light {
+    transition: background 200ms ease;
+}
+
+.world-card--light:hover {
+    background: rgba(15, 23, 42, 0.025);
+}
+
+/* Temna varianta — slika v ozadju + tanjsi prelivni overlay za kontrast besedila. */
+.world-card--bg {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.world-card--bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.55) 0%,
+            rgba(0, 0, 0, 0.25) 55%,
+            rgba(0, 0, 0, 0.1) 100%
+        );
+    z-index: -1;
+    transition: background 250ms ease;
+}
+
+.world-card--bg:hover::before {
+    background:
+        linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.45) 0%,
+            rgba(0, 0, 0, 0.18) 55%,
+            rgba(0, 0, 0, 0.05) 100%
+        );
+}
+
+.world-card--dark {
+    color: #ffffff;
+}
+
+.world-card--dark .world-card__eyebrow {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.world-card--dark .world-card__tagline {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.world-card--dark .world-card__arrow img {
+    filter: invert(1);
+}
+
+.world-card__eyebrow {
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.55);
+}
+
+.world-card__title {
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+}
+
+.world-card__tagline {
+    font-size: 1rem;
+    color: rgba(15, 23, 42, 0.6);
+    max-width: 30rem;
+    line-height: 1.4;
+}
+
+.world-card__arrow {
+    position: absolute;
+    bottom: 3rem;
+    right: 3.5rem;
+    display: block;
+    transition: transform 200ms ease;
+}
+
+.world-card__arrow img {
+    width: 96px;
+    height: auto;
+    display: block;
+}
+
+.world-card:hover .world-card__arrow {
+    transform: translateX(8px);
+}
+
+/* ============================================================
+   Placeholder worlds
+   ============================================================ */
+.world-placeholder {
+    padding: 4rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 720px;
+}
+
+.world-placeholder__eyebrow {
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.55);
+}
+
+.world-placeholder__title {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    line-height: 0.95;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.world-placeholder__copy {
+    margin: 0;
+    color: rgba(15, 23, 42, 0.65);
+    line-height: 1.55;
+    max-width: 38rem;
+}
+
+@media (max-width: 800px) {
+    .kpi-strip {
+        grid-template-columns: repeat(2, 1fr);
+        row-gap: 1.25rem;
+    }
+    .kpi + .kpi {
+        border-left: none;
+        padding-left: 0;
+    }
+    .overview-split {
+        grid-template-columns: 1fr;
+    }
+    .world-card + .world-card {
+        border-left: none;
+        border-top: 1px solid rgba(15, 23, 42, 0.08);
+    }
+}

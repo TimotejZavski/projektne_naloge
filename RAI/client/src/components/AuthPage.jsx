@@ -12,20 +12,20 @@ import { ApiError } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import CourtBackground from "./CourtBackground";
 
-// Prevedi tehnicna sporocila v razumljivo besedilo, brez razkrivanja
-// notranjih kod. Sprejme string (state) ali ApiError objekt.
+// Translate raw backend/network errors into clean English without leaking
+// internal codes. Accepts either a string or an ApiError-like object.
 function prettifyError(err) {
   const raw = typeof err === "string" ? err : err?.message || "";
   const lc = raw.toLowerCase();
   if (lc.includes("rate") || lc.includes("too many") || lc.includes("preveč"))
-    return "preveč poskusov, počakaj minuto in poskusi znova.";
+    return "too many attempts. wait a minute and try again.";
   if (lc.includes("invalid") || lc.includes("napacno") || lc.includes("napačno") || lc.includes("credential"))
-    return "email ali geslo ni pravilno.";
+    return "wrong email or password.";
   if (lc.includes("network") || lc.includes("fetch") || lc.includes("failed to fetch"))
-    return "ni povezave s strežnikom.";
+    return "can't reach the server.";
   if (lc.includes("required") || lc.includes("obvezno"))
-    return "vnesi email in geslo.";
-  return raw || "prijava ni uspela.";
+    return "enter your email and password.";
+  return raw || "sign in failed.";
 }
 
 const BG = {
@@ -52,7 +52,7 @@ export default function AuthPage() {
     try {
       await login({ email: email.trim(), password });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Prijava ni uspela.");
+      setError(err instanceof ApiError ? err.message : "Sign in failed.");
     } finally {
       setSubmitting(false);
     }
@@ -96,7 +96,7 @@ export default function AuthPage() {
           <button
             type="submit"
             className="auth-arrow-btn"
-            aria-label="Prijavi se"
+            aria-label="Sign in"
             disabled={disabled}
           >
             <img src="/assets/arrow.svg" alt="" />
@@ -104,7 +104,7 @@ export default function AuthPage() {
 
           {error && (
             <p role="alert" className="auth-error">
-              <span className="auth-error__tag">napaka</span>
+              <span className="auth-error__tag">error</span>
               <span className="auth-error__msg">{prettifyError(error)}</span>
             </p>
           )}
