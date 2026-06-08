@@ -12,6 +12,9 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+import numpy as np
+
+from . import calibration as cal
 from . import catalog, config, store
 
 router = APIRouter(prefix="/orv/courts", tags=["courts"])
@@ -107,11 +110,12 @@ def get_frame(court_id: str):
 def set_calibration(court_id: str, body: CalibrationBody):
     if store.get_court(court_id) is None:
         raise HTTPException(status_code=404, detail="Igrisce ni registrirano v ORV.")
-    corners = [[c.x, c.y] for c in body.corners]
-    rec = store.upsert_court(court_id, {
-        "calibration": {"corners": corners},
-        "status": "READY",
-    })
+    rec = store.get_court(court_id)
+    fw, fh = rec.get("frameSize", [config.PROC_WIDTH, config.PROC_WIDTH])
+    corners = np.array([[c.x, c.y] for c in body.corners], dtype=np.float32)
+    # isto jedro kot CLI (calibrate.py) -> homografija + top-down velikost
+    calib = cal.build_calibration(corners, (fw, fh))
+    rec = store.upsert_court(court_id, {"calibration": calib, "status": "READY"})
     return rec
 
 

@@ -80,3 +80,5 @@ VID/extra_*/
 VID/service/media/
 # ORV court-detection experiment outputs
 VID/court_detection/out/
+# ORV calibration CLI outputs (court.json + preview images, local)
+VID/court_out/
