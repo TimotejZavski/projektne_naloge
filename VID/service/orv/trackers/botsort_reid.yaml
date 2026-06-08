@@ -1,0 +1,19 @@
+# BoT-SORT + ReID — ponovno prepozna igralca po VIDEZU, ko se po okluziji vrne,
+# in mu vrne isti ID. Najboljše za obstojne ID-je (per-igralec heatmap).
+# Court-agnostično: ReID temelji na videzu osebe, ne na površini igrišča.
+tracker_type: botsort
+track_high_thresh: 0.25
+track_low_thresh: 0.10
+new_track_thresh: 0.30
+track_buffer: 90
+match_thresh: 0.80
+fuse_score: True
+
+# BoT-SORT specifike
+gmc_method: sparseOptFlow
+
+# ReID
+proximity_thresh: 0.5
+appearance_thresh: 0.8
+with_reid: True
+model: auto   # uporabi značilke detektorja

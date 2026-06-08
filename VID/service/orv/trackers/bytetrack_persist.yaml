@@ -1,0 +1,9 @@
+# ByteTrack z daljšim spominom — manj novih ID-jev ob kratki okluziji.
+# Court-agnostično: parametri so vezani na FPS in trajanje okluzije, ne na igrišče.
+tracker_type: bytetrack
+track_high_thresh: 0.25
+track_low_thresh: 0.10
+new_track_thresh: 0.35   # višje: ne sproži novega ID za šibke detekcije
+track_buffer: 150        # ohrani izgubljeno sled ~5s (150 frejmov @30fps) -> manj novih ID
+match_thresh: 0.85
+fuse_score: True

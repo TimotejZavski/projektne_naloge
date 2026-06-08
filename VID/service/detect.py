@@ -29,6 +29,20 @@ from orv import calibration as cal
 from orv import detection as det
 
 
+TRACKERS_DIR = Path(__file__).parent / "orv" / "trackers"
+TRACKER_PRESETS = {
+    "persist": "bytetrack_persist.yaml",  # daljši spomin (manj novih ID-jev)
+    "reid": "botsort_reid.yaml",          # ReID po videzu (najboljši ID-ji)
+}
+
+
+def resolve_tracker(name: str) -> str:
+    """Naša presets ('persist'/'reid') -> pot do yaml; sicer pusti (vgrajeni/pot)."""
+    if name in TRACKER_PRESETS:
+        return str(TRACKERS_DIR / TRACKER_PRESETS[name])
+    return name
+
+
 def load_court_polygon(path: str, ow: int, oh: int) -> np.ndarray | None:
     """Naloži court.json in skaliraj ogljišča na trenutno velikost obdelave."""
     calib = cal.load_calibration(path)
@@ -53,7 +67,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--save-json", action="store_true", help="shrani detections.json")
     p.add_argument("--no-track", action="store_true",
                    help="samo detekcija brez sledenja (privzeto: sledenje z ID-ji)")
-    p.add_argument("--tracker", default="bytetrack.yaml", help="ultralytics tracker config")
+    p.add_argument("--tracker", default="persist",
+                   help="'persist' (dolg spomin) | 'reid' (BoT-SORT ReID) | ime/pot yaml")
     p.add_argument("--court", default=None,
                    help="court.json — obdrži samo igralce, ki STOJIJO na igrišču")
     p.add_argument("--keep-outside", action="store_true",
@@ -104,7 +119,7 @@ def main() -> None:
             frame = cv2.resize(frame, (ow, oh))
             if track:
                 dets, names = det.track_people(model, frame, args.conf, classes,
-                                               args.imgsz, args.tracker)
+                                               args.imgsz, resolve_tracker(args.tracker))
             else:
                 dets, names = det.detect_people(model, frame, args.conf, classes, args.imgsz)
             # kdo STOJI na igrišču (foot točka znotraj poligona)
