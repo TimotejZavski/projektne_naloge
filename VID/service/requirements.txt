@@ -1,0 +1,7 @@
+# ORV storitev (FastAPI). cv2/ultralytics/numpy so ze v VID/.venv.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+opencv-python>=4.9
+numpy>=1.26
+ultralytics>=8.2
