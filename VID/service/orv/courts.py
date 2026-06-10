@@ -11,13 +11,13 @@ import json
 
 import cv2
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 import numpy as np
 
 from . import calibration as cal
-from . import catalog, config, occupancy as occ, store
+from . import catalog, config, live_player, occupancy as occ, store
 
 router = APIRouter(prefix="/orv/courts", tags=["courts"])
 
@@ -169,9 +169,39 @@ def court_sessions(court_id: str):
 
 @router.get("/{court_id}/heatmap")
 def court_heatmap(court_id: str, team: int | None = Query(None, description="0/1 = po ekipi")):
-    """Vročinska karta gibanja (skupna ali po ekipi)."""
+    """Statična vročinska karta gibanja (skupna ali po ekipi)."""
     name = "heatmap_global.jpg" if team is None else f"heatmap_team{team}.jpg"
     path = config.RESULTS_DIR / court_id / name
     if not path.exists():
         raise HTTPException(status_code=404, detail="Heatmap ne obstaja (igrišče še ni obdelano).")
     return FileResponse(str(path), media_type="image/jpeg")
+
+
+# ── ŽIVO predvajanje (sinhron feed + heatmap + podatki) ──────────────
+def _player(court_id: str):
+    try:
+        return live_player.get_player(court_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Igrišče še ni obdelano (manjkajo rezultati).")
+
+
+@router.get("/{court_id}/live/state")
+def live_state(court_id: str):
+    """Trenutno stanje žive ure (poll ~1s): status + št. igralcev po ekipah/čaka."""
+    return _player(court_id).state
+
+
+@router.get("/{court_id}/live/feed")
+def live_feed(court_id: str):
+    """Živi MJPEG annotated feed (okvirji po ekipi, sodniki, status)."""
+    p = _player(court_id)
+    return StreamingResponse(p.feed_mjpeg(),
+                             media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+@router.get("/{court_id}/live/heatmap")
+def live_heatmap(court_id: str, team: int | None = Query(None, description="global ali 0/1")):
+    """Živi MJPEG heatmap, ki se GRADI sinhrono s feedom (skupni ali po ekipi)."""
+    p = _player(court_id)
+    return StreamingResponse(p.heatmap_mjpeg(team),
+                             media_type="multipart/x-mixed-replace; boundary=frame")
