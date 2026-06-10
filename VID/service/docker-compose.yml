@@ -1,0 +1,27 @@
+services:
+  orv-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smart-playgrounds-orv:local
+    container_name: smart-playgrounds-orv
+    ports:
+      - "${ORV_PORT:-8000}:8000"
+    environment:
+      ORV_PORT: 8000
+      ORV_PUBLIC_URL: "${ORV_PUBLIC_URL:-http://localhost:8000}"
+      ORV_CORS_ORIGINS: "${ORV_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173}"
+      ORV_STREAM_DIR: "${ORV_STREAM_DIR:-/app/dataset/valid/videos}"
+      ORV_MEDIA_DIR: "${ORV_MEDIA_DIR:-/app/service/media}"
+      ORV_PROC_WIDTH: "${ORV_PROC_WIDTH:-960}"
+      ORV_JPEG_QUALITY: "${ORV_JPEG_QUALITY:-80}"
+    volumes:
+      - ./media:/app/service/media
+      - ../dataset/valid/videos:/app/dataset/valid/videos:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
