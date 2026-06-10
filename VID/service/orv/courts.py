@@ -7,15 +7,17 @@ zapis dobi status CALIBRATING. Risanje poligona pride v PUT /calibration.
 
 from __future__ import annotations
 
+import json
+
 import cv2
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 import numpy as np
 
 from . import calibration as cal
-from . import catalog, config, store
+from . import catalog, config, occupancy as occ, store
 
 router = APIRouter(prefix="/orv/courts", tags=["courts"])
 
@@ -124,3 +126,52 @@ def remove_court(court_id: str):
     existed = store.delete_court(court_id)
     (config.FRAMES_DIR / f"{court_id}.jpg").unlink(missing_ok=True)
     return {"deleted": existed}
+
+
+# ── analitika zasedenosti (SCRUM-66) ─────────────────────────────────
+def _busy_min(court_id: str) -> int:
+    rec = store.get_court(court_id) or {}
+    return int(rec.get("busyMin", 2))
+
+
+def _load_detections(court_id: str) -> dict:
+    """Naloži obdelane detekcije igrišča ali sproži 404 (še ni obdelano)."""
+    path = config.RESULTS_DIR / court_id / "detections.json"
+    if not path.exists():
+        raise HTTPException(status_code=404,
+                            detail="Igrišče še ni obdelano (ni detekcij). Zaženi cevovod.")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@router.get("/{court_id}/status")
+def court_status(court_id: str):
+    """Trenutno stanje: Prosto/Zasedeno + št. igralcev / čakajočih."""
+    res = occ.compute(_load_detections(court_id), busy_min=_busy_min(court_id))
+    return res["summary"]
+
+
+@router.get("/{court_id}/occupancy")
+def court_occupancy(court_id: str, detail: bool = Query(False, description="vključi perFrame")):
+    """Zasedenost skozi čas: povzetek + seje (+ perFrame, če detail=1)."""
+    res = occ.compute(_load_detections(court_id), busy_min=_busy_min(court_id))
+    out = {"summary": res["summary"], "sessions": res["sessions"]}
+    if detail:
+        out["perFrame"] = res["perFrame"]
+    return out
+
+
+@router.get("/{court_id}/sessions")
+def court_sessions(court_id: str):
+    """Zaznane seje (igre): začetek/konec/trajanje/vrh."""
+    res = occ.compute(_load_detections(court_id), busy_min=_busy_min(court_id))
+    return {"sessions": res["sessions"]}
+
+
+@router.get("/{court_id}/heatmap")
+def court_heatmap(court_id: str, team: int | None = Query(None, description="0/1 = po ekipi")):
+    """Vročinska karta gibanja (skupna ali po ekipi)."""
+    name = "heatmap_global.jpg" if team is None else f"heatmap_team{team}.jpg"
+    path = config.RESULTS_DIR / court_id / name
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Heatmap ne obstaja (igrišče še ni obdelano).")
+    return FileResponse(str(path), media_type="image/jpeg")

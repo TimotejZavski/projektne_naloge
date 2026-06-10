@@ -17,6 +17,8 @@ STREAM_DIR = Path(os.getenv("ORV_STREAM_DIR", VID_ROOT / "dataset" / "valid" / "
 MEDIA_DIR = Path(os.getenv("ORV_MEDIA_DIR", SERVICE_DIR / "media"))
 FRAMES_DIR = MEDIA_DIR / "frames"
 COURTS_FILE = MEDIA_DIR / "courts.json"
+# Obdelani rezultati na igrišče (detections.json, occupancy.json, heatmap slike).
+RESULTS_DIR = MEDIA_DIR / "results"
 
 # Javni naslov storitve (za sestavljanje stream povezav v odgovorih).
 PUBLIC_BASE = os.getenv("ORV_PUBLIC_URL", "http://localhost:8000").rstrip("/")
@@ -36,3 +38,4 @@ def ensure_dirs() -> None:
     """Ustvari runtime mape, ce se ne obstajajo."""
     MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     FRAMES_DIR.mkdir(parents=True, exist_ok=True)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
