@@ -1,0 +1,234 @@
+@page "/orv-live"
+@inject IOrvLiveFeedClient OrvLiveFeedClient
+@implements IAsyncDisposable
+
+<PageTitle>ORV v zivo</PageTitle>
+
+<div class="orv-live-page">
+    <section class="orv-live-header">
+        <div>
+            <p class="orv-live-kicker">ORV povezava</p>
+            <h1>Live-feed igrisca</h1>
+            <p class="orv-live-subtitle">Pregled trenutnega video toka in stevila zaznanih igralcev za izbrano igrisce.</p>
+        </div>
+
+        <div class="orv-live-actions">
+            <button class="btn btn-outline-primary" @onclick="ToggleStreams">
+                @(streamsEnabled ? "Ustavi tok" : "Prikazi tok")
+            </button>
+            <button class="btn btn-primary" @onclick="RefreshStateAsync" disabled="@isLoading">
+                @(isLoading ? "Osvezujem..." : "Osvezi")
+            </button>
+        </div>
+    </section>
+
+    <section class="orv-live-summary" aria-label="Povzetek live stanja">
+        <div class="orv-live-summary-card">
+            <span>Status</span>
+            <strong>@liveState.StatusLabel</strong>
+        </div>
+        <div class="orv-live-summary-card">
+            <span>Igralci</span>
+            <strong>@FormatCount(liveState.Players)</strong>
+        </div>
+        <div class="orv-live-summary-card">
+            <span>Ekipa 1</span>
+            <strong>@FormatCount(liveState.Team0)</strong>
+        </div>
+        <div class="orv-live-summary-card">
+            <span>Ekipa 2</span>
+            <strong>@FormatCount(liveState.Team1)</strong>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(message))
+    {
+        <div class="@messageClass" role="status">@message</div>
+    }
+
+    <section class="orv-live-grid">
+        <article class="orv-live-panel">
+            <div class="orv-live-panel-header">
+                <div>
+                    <h2>Video tok</h2>
+                    <p>@OrvLiveFeedClient.Options.CourtId</p>
+                </div>
+                <span class="@StreamStatusClass">@StreamStatusLabel</span>
+            </div>
+
+            <div class="orv-live-video-frame">
+                @if (streamsEnabled)
+                {
+                    <img src="@OrvLiveFeedClient.FeedUrl" alt="ORV live video tok" />
+                }
+                else
+                {
+                    <div class="orv-live-placeholder">Tok je ustavljen.</div>
+                }
+            </div>
+        </article>
+
+        <article class="orv-live-panel">
+            <div class="orv-live-panel-header">
+                <div>
+                    <h2>Stanje</h2>
+                    <p>Zadnji prebran ORV snapshot</p>
+                </div>
+            </div>
+
+            <dl class="orv-live-details">
+                <div>
+                    <dt>Cakajoci</dt>
+                    <dd>@FormatCount(liveState.Waiting)</dd>
+                </div>
+                <div>
+                    <dt>Sodniki</dt>
+                    <dd>@FormatCount(liveState.Referees)</dd>
+                </div>
+                <div>
+                    <dt>Frame</dt>
+                    <dd>@FormatCount(liveState.Frame)</dd>
+                </div>
+                <div>
+                    <dt>Zadnja posodobitev</dt>
+                    <dd>@lastUpdatedLabel</dd>
+                </div>
+            </dl>
+        </article>
+    </section>
+
+    <section class="orv-live-heatmaps" aria-label="Toplotne karte">
+        <article class="orv-live-panel">
+            <div class="orv-live-panel-header">
+                <div>
+                    <h2>Skupna heatmap</h2>
+                    <p>Gibanje vseh zaznanih igralcev</p>
+                </div>
+            </div>
+            <div class="orv-live-media">
+                @if (streamsEnabled)
+                {
+                    <img src="@OrvLiveFeedClient.GlobalHeatmapUrl" alt="Skupna ORV toplotna karta" />
+                }
+                else
+                {
+                    <div class="orv-live-placeholder">Heatmap tok je ustavljen.</div>
+                }
+            </div>
+        </article>
+
+        <article class="orv-live-panel">
+            <div class="orv-live-panel-header">
+                <div>
+                    <h2>Ekipa 1</h2>
+                    <p>Toplotna karta prve ekipe</p>
+                </div>
+            </div>
+            <div class="orv-live-media">
+                @if (streamsEnabled)
+                {
+                    <img src="@OrvLiveFeedClient.Team0HeatmapUrl" alt="ORV toplotna karta prve ekipe" />
+                }
+                else
+                {
+                    <div class="orv-live-placeholder">Heatmap tok je ustavljen.</div>
+                }
+            </div>
+        </article>
+
+        <article class="orv-live-panel">
+            <div class="orv-live-panel-header">
+                <div>
+                    <h2>Ekipa 2</h2>
+                    <p>Toplotna karta druge ekipe</p>
+                </div>
+            </div>
+            <div class="orv-live-media">
+                @if (streamsEnabled)
+                {
+                    <img src="@OrvLiveFeedClient.Team1HeatmapUrl" alt="ORV toplotna karta druge ekipe" />
+                }
+                else
+                {
+                    <div class="orv-live-placeholder">Heatmap tok je ustavljen.</div>
+                }
+            </div>
+        </article>
+    </section>
+</div>
+
+@code {
+    private readonly CancellationTokenSource disposeTokenSource = new();
+    private OrvLiveFeedState liveState = OrvLiveFeedState.Empty;
+    private bool isLoading = true;
+    private bool streamsEnabled = true;
+    private string lastUpdatedLabel = "Ni podatkov";
+    private string? message;
+    private string messageClass = "orv-live-message";
+
+    private string StreamStatusLabel => streamsEnabled ? "Aktiven" : "Ustavljen";
+
+    private string StreamStatusClass => streamsEnabled
+        ? "orv-live-status orv-live-status--active"
+        : "orv-live-status";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshStateAsync();
+        _ = PollStateAsync(disposeTokenSource.Token);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        streamsEnabled = false;
+        disposeTokenSource.Cancel();
+        disposeTokenSource.Dispose();
+
+        return ValueTask.CompletedTask;
+    }
+
+    private async Task PollStateAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await RefreshStateAsync(cancellationToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private async Task RefreshStateAsync(CancellationToken cancellationToken = default)
+    {
+        isLoading = true;
+
+        try
+        {
+            liveState = await OrvLiveFeedClient.GetStateAsync(cancellationToken);
+            lastUpdatedLabel = DateTime.Now.ToString("HH:mm:ss");
+            message = liveState.Players.HasValue
+                ? null
+                : "ORV podatki trenutno niso dosegljivi. Preveri, ali je ORV storitev zagnana in ali je igrisce obdelano.";
+            messageClass = liveState.Players.HasValue
+                ? "orv-live-message orv-live-message--success"
+                : "orv-live-message orv-live-message--warning";
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void ToggleStreams()
+    {
+        streamsEnabled = !streamsEnabled;
+    }
+
+    private static string FormatCount(int? value) => value?.ToString() ?? "-";
+}

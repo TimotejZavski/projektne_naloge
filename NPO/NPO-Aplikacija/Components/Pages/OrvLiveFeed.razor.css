@@ -1,0 +1,228 @@
+.orv-live-page {
+    display: grid;
+    gap: 1rem;
+    color: #172033;
+}
+
+.orv-live-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.4rem 1.5rem;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    background: #ffffff;
+    box-shadow: var(--app-shadow);
+}
+
+.orv-live-kicker {
+    margin: 0 0 0.25rem;
+    color: var(--app-primary);
+    font-size: 0.78rem;
+    font-weight: 750;
+    text-transform: uppercase;
+}
+
+.orv-live-header h1 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.8rem;
+    font-weight: 750;
+}
+
+.orv-live-subtitle {
+    margin: 0.35rem 0 0;
+    max-width: 42rem;
+    color: #64748b;
+}
+
+.orv-live-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.5rem;
+}
+
+.orv-live-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.orv-live-summary-card,
+.orv-live-panel {
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    background: #ffffff;
+    box-shadow: var(--app-shadow);
+}
+
+.orv-live-summary-card {
+    display: grid;
+    gap: 0.25rem;
+    min-height: 5.25rem;
+    padding: 1rem;
+}
+
+.orv-live-summary-card span,
+.orv-live-details dt {
+    color: #64748b;
+    font-size: 0.76rem;
+    font-weight: 750;
+    text-transform: uppercase;
+}
+
+.orv-live-summary-card strong {
+    color: var(--app-primary-strong);
+    font-size: 1.45rem;
+    line-height: 1.1;
+}
+
+.orv-live-message {
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-sm);
+    background: #ffffff;
+    font-weight: 650;
+}
+
+.orv-live-message--success {
+    border-color: #86efac;
+    color: #14532d;
+    background: #f0fdf4;
+}
+
+.orv-live-message--warning {
+    border-color: #fdba74;
+    color: #7c2d12;
+    background: #fff7ed;
+}
+
+.orv-live-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 0.8fr);
+    gap: 0.75rem;
+}
+
+.orv-live-panel {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.orv-live-panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.orv-live-panel-header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.05rem;
+    font-weight: 750;
+}
+
+.orv-live-panel-header p {
+    margin: 0.2rem 0 0;
+    color: #64748b;
+}
+
+.orv-live-status {
+    flex: 0 0 auto;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    color: #7f1d1d;
+    background: #fee2e2;
+    font-size: 0.78rem;
+    font-weight: 750;
+}
+
+.orv-live-status--active {
+    color: #14532d;
+    background: #dcfce7;
+}
+
+.orv-live-video-frame,
+.orv-live-media {
+    display: grid;
+    place-items: center;
+    min-height: 12rem;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--app-radius-sm);
+    background: #0f172a;
+}
+
+.orv-live-video-frame {
+    aspect-ratio: 16 / 9;
+}
+
+.orv-live-video-frame img,
+.orv-live-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.orv-live-placeholder {
+    padding: 1rem;
+    color: #cbd5e1;
+    text-align: center;
+}
+
+.orv-live-details {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.orv-live-details div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.orv-live-details div:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.orv-live-details dd {
+    margin: 0;
+    color: #0f172a;
+    font-weight: 750;
+}
+
+.orv-live-heatmaps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.orv-live-media {
+    aspect-ratio: 4 / 3;
+}
+
+@media (max-width: 991.98px) {
+    .orv-live-summary,
+    .orv-live-grid,
+    .orv-live-heatmaps {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .orv-live-header,
+    .orv-live-panel-header {
+        flex-direction: column;
+    }
+
+    .orv-live-actions,
+    .orv-live-actions .btn {
+        width: 100%;
+    }
+}
