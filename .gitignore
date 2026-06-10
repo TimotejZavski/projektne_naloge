@@ -87,3 +87,6 @@ VID/court_detection/out/
 VID/court_out/
 # ORV docx build dir (node_modules etc.) — generated
 VID/_docx_build/
+
+# ORV dataset zip for Colab upload (local only)
+VID/*.zip
