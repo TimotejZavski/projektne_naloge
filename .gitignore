@@ -74,3 +74,16 @@ __pycache__/
 *.onnx
 *.engine
 runs/
+
+# Derived/local datasets (regenerated from VID/dataset by prepare scripts)
+VID/dataset_*/
+VID/extra_*/
+
+# ORV service runtime data (court store, captured frames) — local only
+VID/service/media/
+# ORV court-detection experiment outputs
+VID/court_detection/out/
+# ORV calibration CLI outputs (court.json + preview images, local)
+VID/court_out/
+# ORV docx build dir (node_modules etc.) — generated
+VID/_docx_build/
