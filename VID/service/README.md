@@ -18,7 +18,9 @@ API dokumentacija: <http://localhost:8000/docs>
 
 ORV storitev lahko zazenemo tudi kot samostojen Docker vsebnik. Docker slika
 vkljuci FastAPI servis, OpenCV sistemske knjiznice in Python odvisnosti iz
-`requirements.txt`.
+`requirements.txt`. Za prenosljivost na navadnem Docker Desktop okolju se
+Torch/Torchvision namestita iz CPU wheel repozitorija, zato slika ne zahteva
+NVIDIA/CUDA runtime-a.
 
 ```powershell
 cd VID/service

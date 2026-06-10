@@ -17,6 +17,7 @@ RUN apt-get update \
 
 COPY requirements.txt /app/service/requirements.txt
 RUN python -m pip install --upgrade pip \
+    && python -m pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision \
     && python -m pip install -r /app/service/requirements.txt
 
 COPY . /app/service
