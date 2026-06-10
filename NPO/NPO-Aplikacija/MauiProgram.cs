@@ -36,6 +36,14 @@ namespace NPO_Aplikacija
                     serviceProvider.GetRequiredService<IDeviceIdentityProvider>(),
                     serviceProvider.GetRequiredService<ILogger<RaiIntegrationClient>>()));
 
+            var orvLiveFeedOptions = OrvLiveFeedOptions.FromEnvironment();
+            builder.Services.AddSingleton(orvLiveFeedOptions);
+            builder.Services.AddTransient<IOrvLiveFeedClient>(serviceProvider =>
+                new OrvLiveFeedClient(
+                    new HttpClient(),
+                    serviceProvider.GetRequiredService<OrvLiveFeedOptions>(),
+                    serviceProvider.GetRequiredService<ILogger<OrvLiveFeedClient>>()));
+
             // Registracija senzorskih storitev
             builder.Services.AddSingleton<IGPSSensor, GPSSensor>();
             builder.Services.AddSingleton<IAccelerometerSensor, AccelerometerSensor>();
