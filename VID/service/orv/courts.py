@@ -8,9 +8,11 @@ zapis dobi status CALIBRATING. Risanje poligona pride v PUT /calibration.
 from __future__ import annotations
 
 import json
+import subprocess
+from datetime import datetime, timezone
 
 import cv2
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -20,6 +22,8 @@ from . import calibration as cal
 from . import catalog, config, live_player, occupancy as occ, store
 
 router = APIRouter(prefix="/orv/courts", tags=["courts"])
+
+VENV_PY = str(config.VID_ROOT / ".venv" / "Scripts" / "python.exe")
 
 SEEK_FRAME = 120  # preskoci morebiten zacetek/intro
 
@@ -175,6 +179,46 @@ def court_heatmap(court_id: str, team: int | None = Query(None, description="0/1
     if not path.exists():
         raise HTTPException(status_code=404, detail="Heatmap ne obstaja (igrišče še ni obdelano).")
     return FileResponse(str(path), media_type="image/jpeg")
+
+
+# ── obdelava igrišča: detect -> count -> heatmap (background) ─────────
+def _run_pipeline(court_id: str) -> None:
+    rec = store.get_court(court_id)
+    rdir = config.RESULTS_DIR / court_id
+    rdir.mkdir(parents=True, exist_ok=True)
+    (rdir / "court.json").write_text(json.dumps(rec["calibration"]), encoding="utf-8")
+    video = catalog.resolve_capture_source(rec["streamUrl"])
+    vid_root = str(config.VID_ROOT)
+
+    def run(cmd):
+        subprocess.run([VENV_PY] + cmd, cwd=vid_root, check=True,
+                       capture_output=True, text=True, timeout=900)
+    try:
+        run(["service/detect.py", video, "--court", str(rdir / "court.json"),
+             "--out", str(rdir), "--save-json"])
+        run(["service/count.py", "--det", str(rdir / "detections.json"), "--out", str(rdir)])
+        run(["service/heatmap.py", "--det", str(rdir / "detections.json"),
+             "--court", str(rdir / "court.json"), "--out", str(rdir)])
+        store.upsert_court(court_id, {"status": "READY",
+                                      "processedAt": datetime.now(timezone.utc).isoformat()})
+        live_player.drop(court_id)               # da se ob naslednjem /live naloži sveže
+    except subprocess.CalledProcessError as e:
+        store.upsert_court(court_id, {"status": "ERROR", "error": (e.stderr or str(e))[-500:]})
+    except Exception as e:
+        store.upsert_court(court_id, {"status": "ERROR", "error": str(e)[-500:]})
+
+
+@router.post("/{court_id}/process")
+def process_court(court_id: str, background: BackgroundTasks):
+    """Zaženi cevovod (detect->count->heatmap) za kalibrirano igrišče (v ozadju)."""
+    rec = store.get_court(court_id)
+    if rec is None:
+        raise HTTPException(status_code=404, detail="Igrišče ni registrirano v ORV.")
+    if not rec.get("calibration"):
+        raise HTTPException(status_code=400, detail="Igrišče ni kalibrirano (najprej nariši igrišče).")
+    store.upsert_court(court_id, {"status": "PROCESSING", "error": None})
+    background.add_task(_run_pipeline, court_id)
+    return {"status": "PROCESSING", "raiCourtId": court_id}
 
 
 # ── ŽIVO predvajanje (sinhron feed + heatmap + podatki) ──────────────

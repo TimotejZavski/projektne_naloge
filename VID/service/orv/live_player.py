@@ -187,3 +187,11 @@ def get_player(court_id: str) -> LivePlayer:
         if court_id not in _players:
             _players[court_id] = LivePlayer(court_id)
         return _players[court_id]
+
+
+def drop(court_id: str) -> None:
+    """Odstrani predpomnjeni player (po ponovni obdelavi igrišča) — ustavi nit."""
+    with _reg_lock:
+        p = _players.pop(court_id, None)
+    if p is not None:
+        p.running = False
