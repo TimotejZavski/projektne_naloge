@@ -16,7 +16,7 @@
             <button class="btn btn-outline-primary" @onclick="ToggleStreams">
                 @(streamsEnabled ? "Ustavi tok" : "Prikazi tok")
             </button>
-            <button class="btn btn-primary" @onclick="RefreshStateAsync" disabled="@isLoading">
+            <button class="btn btn-primary" @onclick="() => RefreshStateAsync()" disabled="@isLoading">
                 @(isLoading ? "Osvezujem..." : "Osvezi")
             </button>
         </div>
