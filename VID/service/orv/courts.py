@@ -8,7 +8,9 @@ zapis dobi status CALIBRATING. Risanje poligona pride v PUT /calibration.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
 from datetime import datetime, timezone
 
 import cv2
@@ -23,7 +25,7 @@ from . import catalog, config, live_player, occupancy as occ, store
 
 router = APIRouter(prefix="/orv/courts", tags=["courts"])
 
-VENV_PY = str(config.VID_ROOT / ".venv" / "Scripts" / "python.exe")
+PYTHON_BIN = os.getenv("ORV_PYTHON", sys.executable)
 
 SEEK_FRAME = 120  # preskoci morebiten zacetek/intro
 
@@ -191,7 +193,7 @@ def _run_pipeline(court_id: str) -> None:
     vid_root = str(config.VID_ROOT)
 
     def run(cmd):
-        subprocess.run([VENV_PY] + cmd, cwd=vid_root, check=True,
+        subprocess.run([PYTHON_BIN] + cmd, cwd=vid_root, check=True,
                        capture_output=True, text=True, timeout=900)
     try:
         run(["service/detect.py", video, "--court", str(rdir / "court.json"),
