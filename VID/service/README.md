@@ -84,6 +84,7 @@ prehod ne zahteva spremembe kode.
 |---|---|---|
 | `ORV_STREAM_DIR` | `VID/dataset/valid/videos` | mapa izvornih videov (kamer) |
 | `ORV_MEDIA_DIR` | `service/media` | runtime podatki (gitignored) |
+| `ORV_PYTHON` | trenutni Python | interpreter za detect/count/heatmap pipeline |
 | `ORV_PUBLIC_URL` | `http://localhost:8000` | javni naslov za povezave |
 | `ORV_CORS_ORIGINS` | `http://localhost:3000,...` | dovoljeni CORS izvori |
 | `ORV_PROC_WIDTH` | `960` | sirina obdelave/predvajanja |

@@ -13,6 +13,7 @@ services:
       ORV_CORS_ORIGINS: "${ORV_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173}"
       ORV_STREAM_DIR: "${ORV_STREAM_DIR:-/app/dataset/valid/videos}"
       ORV_MEDIA_DIR: "${ORV_MEDIA_DIR:-/app/service/media}"
+      ORV_PYTHON: "${ORV_PYTHON:-/usr/local/bin/python}"
       ORV_PROC_WIDTH: "${ORV_PROC_WIDTH:-960}"
       ORV_JPEG_QUALITY: "${ORV_JPEG_QUALITY:-80}"
     volumes:
