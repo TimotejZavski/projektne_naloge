@@ -130,27 +130,27 @@ def main() -> None:
                 inside = [True] * len(dets)
             kept = [d for d, ins in zip(dets, inside) if ins]
 
-            # izris: samo igralci na igrišču (z --keep-outside še sivi zunaj)
-            if args.keep_outside or court is None:
-                det.draw_detections(frame, dets, names, inside_flags=inside)
-            else:
-                det.draw_detections(frame, kept, names)
+            # vedno izriši vse: igralci na igrišču obarvani, ljudje ob strani sivi
+            det.draw_detections(frame, dets, names, inside_flags=inside)
+            n_in = int(sum(inside))
+            n_out = len(dets) - n_in
 
-            for d in kept:
-                if d.get("id", -1) >= 0:
+            for d, ins in zip(dets, inside):
+                if ins and d.get("id", -1) >= 0:
                     seen_ids.add(d["id"])
-            cv2.putText(frame, f"frame {frame_idx}  na igriscu: {len(kept)}/{len(dets)}  ID: {len(seen_ids)}",
+            cv2.putText(frame, f"frame {frame_idx}  na igriscu: {n_in}  ob strani: {n_out}  ID: {len(seen_ids)}",
                         (12, oh - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             writer.write(frame)
-            total_dets += len(kept)
+            total_dets += n_in
             processed += 1
             if args.save_json:
                 per_frame.append({
                     "frame": frame_idx,
-                    "feet": [d["foot"] for d in kept],
-                    "ids": [d["id"] for d in kept],
-                    "boxes": [d["xyxy"] for d in kept],
-                    "conf": [d["conf"] for d in kept],
+                    "feet": [d["foot"] for d in dets],
+                    "ids": [d["id"] for d in dets],
+                    "boxes": [d["xyxy"] for d in dets],
+                    "conf": [d["conf"] for d in dets],
+                    "inside": [bool(x) for x in inside],   # True=na igrišču, False=ob strani
                 })
             if processed % 50 == 0:
                 print(f"  {processed} frejmov | zadnji: {len(dets)} igralcev | unikatnih ID: {len(seen_ids)}")

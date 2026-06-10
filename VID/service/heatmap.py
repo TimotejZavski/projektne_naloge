@@ -88,7 +88,10 @@ def main() -> None:
         e = entries.get(idx)
         if e is not None:
             fr = cv2.resize(frame, (dw, dh))
-            for foot, box in zip(e["feet"], e["boxes"]):
+            ins = e.get("inside", [True] * len(e["feet"]))
+            for foot, box, on_court in zip(e["feet"], e["boxes"], ins):
+                if not on_court:                  # samo igralci na igrišču v heatmap
+                    continue
                 col = tm.jersey_color(fr, box)
                 if col is None:
                     continue
