@@ -97,6 +97,38 @@ Topic format:
 smart-playgrounds/devices/{deviceId}/sensors/{sensorType}
 ```
 
+## ORV live-feed pogled
+
+NPO aplikacija ima pogled `ORV live` na poti `/orv-live`. Pogled je namenjen
+prikazu live toka iz ORV storitve in trenutnega stevila zaznanih igralcev.
+Stran bere ORV stanje periodicno, priblizno enkrat na sekundo, in prikaze:
+
+- MJPEG video tok iz ORV storitve,
+- skupno stevilo igralcev,
+- stevilo igralcev po ekipah,
+- cakajoce osebe, sodnike in trenutni frame,
+- skupno in ekipno heatmap sliko.
+
+Lokalne nastavitve:
+
+```text
+NPO_ORV_BASE_URL=http://localhost:8000
+NPO_ORV_COURT_ID=test-court-1
+NPO_ORV_TIMEOUT_SECONDS=5
+```
+
+Ce spremenljivke niso nastavljene, aplikacija uporabi zgornje privzete
+vrednosti. ORV storitev mora pred tem imeti obdelano igrisce, ker endpointi
+`/orv/courts/{courtId}/live/state`, `/live/feed` in `/live/heatmap` berejo
+pripravljene rezultate iz VID/ORV dela projekta.
+
+Preverjanje:
+
+```powershell
+dotnet build NPO\NPO-Aplikacija\NPO-Aplikacija.csproj -f net10.0-windows10.0.19041.0
+dotnet run --project NPO\NPO-Aplikacija\NPO-Aplikacija.csproj -f net10.0-windows10.0.19041.0
+```
+
 GPS zajem najprej poskusi prebrati dejansko lokacijo naprave prek MAUI
 geolokacije. Ce lokacija v razvojnem okolju ni na voljo, aplikacija uporabi
 varen nadomestni koordinatni par, da MQTT tok in RAI integracija ostaneta
