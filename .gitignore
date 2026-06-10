@@ -82,3 +82,5 @@ VID/service/media/
 VID/court_detection/out/
 # ORV calibration CLI outputs (court.json + preview images, local)
 VID/court_out/
+# ORV docx build dir (node_modules etc.) — generated
+VID/_docx_build/
