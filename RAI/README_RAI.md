@@ -178,6 +178,28 @@ Primer GPS payload-a:
 Za prikaz GPS sledi frontend bere meritve prek
 `GET /api/measurements?deviceId={deviceId}&sensorType=gps&sort=desc`.
 
+## ORV dashboard integracija
+
+RAI admin overview prikazuje tudi ORV statusni panel. Panel bere ORV storitev
+loceno od RAI API-ja, zato ne spreminja obstojecih auth, scraper ali MongoDB
+tokov.
+
+Frontend uporablja:
+
+```text
+REACT_APP_ORV_BASE_URL=http://localhost:8000
+REACT_APP_ORV_COURT_ID=test-court-1
+```
+
+Panel preveri:
+
+- `GET /health` za status ORV storitve,
+- `GET /streams` za zankan demo video tok,
+- `GET /orv/courts/{courtId}/live/state` za stevilo igralcev in frame,
+- `/orv/courts/{courtId}/live/feed` kot neposreden MJPEG live feed.
+
+Ce ORV ni zagnan, admin dashboard ostane uporaben in prikaze offline stanje.
+
 ## Docker okolje (SCRUM-23)
 
 Backend + MongoDB se zazenata z **enim ukazom**:
