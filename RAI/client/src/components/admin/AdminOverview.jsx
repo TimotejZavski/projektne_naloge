@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 
 import { apiRequest } from "../../api/client";
+import OrvDashboardPanel from "./OrvDashboardPanel";
 
 export default function AdminOverview({ onGo }) {
   const [kpi, setKpi] = useState({ users: null, courts: null, online: null });
@@ -61,7 +62,7 @@ export default function AdminOverview({ onGo }) {
           label="Courts"
           subtitle={
             kpi.courts != null
-              ? `${kpi.courts} courts · ${activity.coursesBusy ?? "—"} busy now`
+              ? `${kpi.courts} courts · ${activity.courtsBusy ?? "—"} busy now`
               : "loading…"
           }
           tagline="Where the games are. Visitors, hot times, location."
@@ -70,6 +71,8 @@ export default function AdminOverview({ onGo }) {
           bgImage="/assets/backgrounds/court.jpg"
         />
       </div>
+
+      <OrvDashboardPanel />
     </div>
   );
 }
