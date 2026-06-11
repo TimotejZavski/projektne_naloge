@@ -61,7 +61,7 @@ export default function AdminOverview({ onGo }) {
           label="Courts"
           subtitle={
             kpi.courts != null
-              ? `${kpi.courts} courts · ${activity.coursesBusy ?? "—"} busy now`
+              ? `${kpi.courts} courts · ${activity.courtsBusy ?? "—"} busy now`
               : "loading…"
           }
           tagline="Where the games are. Visitors, hot times, location."
