@@ -56,3 +56,12 @@ export function buildOrvCourtLiveFeedUrl(courtId, baseUrl = DEFAULT_ORV_BASE_URL
 
   return buildOrvUrl(`/orv/courts/${encodeURIComponent(courtId)}/live/feed`, baseUrl);
 }
+
+export function buildOrvCourtLiveHeatmapUrl(courtId, team, baseUrl = DEFAULT_ORV_BASE_URL) {
+  if (!courtId) {
+    throw new TypeError('buildOrvCourtLiveHeatmapUrl: courtId je obvezen');
+  }
+
+  const query = team === 0 || team === 1 ? `?team=${team}` : '';
+  return buildOrvUrl(`/orv/courts/${encodeURIComponent(courtId)}/live/heatmap${query}`, baseUrl);
+}

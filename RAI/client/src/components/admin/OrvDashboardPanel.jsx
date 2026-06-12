@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   buildOrvCourtLiveFeedUrl,
+  buildOrvCourtLiveHeatmapUrl,
   getOrvCourtLiveState,
   getOrvHealth,
   listOrvStreams,
@@ -18,11 +19,14 @@ export default function OrvDashboardPanel() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [lastSync, setLastSync] = useState(null);
+  const [showLive, setShowLive] = useState(false);
 
   const liveFeedUrl = useMemo(
     () => buildOrvCourtLiveFeedUrl(DEFAULT_COURT_ID),
     []
   );
+  const heat0Url = useMemo(() => buildOrvCourtLiveHeatmapUrl(DEFAULT_COURT_ID, 0), []);
+  const heat1Url = useMemo(() => buildOrvCourtLiveHeatmapUrl(DEFAULT_COURT_ID, 1), []);
 
   const primaryStream = streams[0] || null;
 
@@ -101,7 +105,26 @@ export default function OrvDashboardPanel() {
         <button type="button" className="ghost-button" onClick={() => load()} disabled={loading}>
           {loading ? "Osvezujem..." : "Osvezi ORV"}
         </button>
+        <button
+          type="button"
+          className="ghost-button"
+          onClick={() => setShowLive((v) => !v)}
+          disabled={health?.status !== "ok"}
+        >
+          {showLive ? "Skrij zivo" : "Zivo: video + heatmapa ekip"}
+        </button>
       </div>
+
+      {showLive && health?.status === "ok" && (
+        <div
+          className="orv-live-grid"
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 12 }}
+        >
+          <LiveTile src={liveFeedUrl} caption="Live feed" />
+          <LiveTile src={heat0Url} caption="Heatmap ekipa 0" />
+          <LiveTile src={heat1Url} caption="Heatmap ekipa 1" />
+        </div>
+      )}
 
       <p className="orv-dashboard-panel__note">
         {error
@@ -118,5 +141,14 @@ function Metric({ label, value }) {
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
+  );
+}
+
+function LiveTile({ src, caption }) {
+  return (
+    <figure style={{ margin: 0 }}>
+      <img src={src} alt={caption} style={{ width: "100%", borderRadius: 6, display: "block" }} />
+      <figcaption style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>{caption}</figcaption>
+    </figure>
   );
 }
