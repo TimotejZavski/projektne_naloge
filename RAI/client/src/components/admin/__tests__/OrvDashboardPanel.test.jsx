@@ -9,6 +9,9 @@ import {
 
 jest.mock('../../../api/orv', () => ({
   buildOrvCourtLiveFeedUrl: jest.fn(() => 'http://orv.test/orv/courts/test-court-1/live/feed'),
+  buildOrvCourtLiveHeatmapUrl: jest.fn(
+    (courtId, team) => `http://orv.test/orv/courts/${courtId}/live/heatmap?team=${team}`
+  ),
   getOrvCourtLiveState: jest.fn(),
   getOrvHealth: jest.fn(),
   listOrvStreams: jest.fn(),
